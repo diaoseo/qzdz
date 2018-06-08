@@ -42,7 +42,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set li[1]=LoadInteger(udg_hs,22,ti)//读取强化书等级
             set li[2]=LoadInteger(udg_hs,ti,100)//读取强化书对应武器类型
             loop//遍历物品栏
-                exitwhen li[0]==5
+                exitwhen li[0]==6
                 if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[2]then//判断有无对应武器
                     set li[4]=GetItemTypeId(UnitItemInSlot(u1,li[0]))//读取对应装备
                     call RemoveItem(UnitItemInSlot(u1,li[0]))//删除旧装备
@@ -67,7 +67,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set li[1]=LoadInteger(udg_hs,22,ti)//读取强化书等级
             set li[3]=LoadInteger(udg_hs,ti,101)//读取强化书对应衣服类型
             loop//遍历物品栏
-                exitwhen li[0]==5
+                exitwhen li[0]==6
                 if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[3] then//判断有无对应衣服
                     set li[4]=GetItemTypeId(UnitItemInSlot(u1,li[0]))//读取对应装备
                     call RemoveItem(UnitItemInSlot(u1,li[0]))//删除旧装备
@@ -91,10 +91,10 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
     endif
 
     if GetItemType(litem)==ITEM_TYPE_PERMANENT then//判断永久物品
-        if lv>0 and lv<4 then//一级武器，二级衣服，三级圣兽物品
+        if lv>0 and lv<6 then//一级武器，二级衣服，三级手套，四级护符，五级项链
             set li[0]=0
             loop
-                exitwhen li[0]==5
+                exitwhen li[0]==6
                 if GetItemLevel(UnitItemInSlot(u1,li[0]))==lv and UnitItemInSlot(u1,li[0])!=litem then//只能携带一件同类装备
                     call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()),0,0,10,msg(1)+"你身上已有同类物品")
                     call UnitRemoveItem(u1,litem)
