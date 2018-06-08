@@ -37,14 +37,38 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set litem=null
             return//退出
         endif
-        if lv==2 then//判断等级强化
+        if lv==2 then//2级武器
             set li[0]=0//初始化循环
             set li[1]=LoadInteger(udg_hs,22,ti)//读取强化书等级
             set li[2]=LoadInteger(udg_hs,ti,100)//读取强化书对应武器类型
+            loop//遍历物品栏
+                exitwhen li[0]==5
+                if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[2]then//判断有无对应武器
+                    set li[4]=GetItemTypeId(UnitItemInSlot(u1,li[0]))//读取对应装备
+                    call RemoveItem(UnitItemInSlot(u1,li[0]))//删除旧装备
+                    set litem=CreateItem(LoadInteger(udg_hs,21,li[4]),GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()))
+                    call UnitAddItem(u1,litem)//创建新装备
+                    call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()),0,0,10,msg(1)+"装备已升级成"+GetItemName(litem))
+                    set litem=null
+                    set u1=null
+                    call RemoveItem(GetManipulatedItem())//能量提升直排
+                    return//退出
+                endif
+                set li[0]=li[0]+1
+            endloop
+            call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()),0,0,10,msg(1)+"装备强化失败，请检查你的装备")
+            call RemoveItem(GetManipulatedItem())//能量提升直排
+            set litem=null
+            set u1=null
+            return
+        endif
+        if lv==3 then//3级衣服
+            set li[0]=0//初始化循环
+            set li[1]=LoadInteger(udg_hs,22,ti)//读取强化书等级
             set li[3]=LoadInteger(udg_hs,ti,101)//读取强化书对应衣服类型
             loop//遍历物品栏
                 exitwhen li[0]==5
-                if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[2] or GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[3] then//判断有无对应武器或衣服
+                if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[3] then//判断有无对应衣服
                     set li[4]=GetItemTypeId(UnitItemInSlot(u1,li[0]))//读取对应装备
                     call RemoveItem(UnitItemInSlot(u1,li[0]))//删除旧装备
                     set litem=CreateItem(LoadInteger(udg_hs,21,li[4]),GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()))
