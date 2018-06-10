@@ -5,6 +5,9 @@ constant boolean LIBRARY_libbgj=true
 //globals from libchuguai:
 constant boolean LIBRARY_libchuguai=true
 //endglobals from libchuguai
+//globals from libdeath:
+constant boolean LIBRARY_libdeath=true
+//endglobals from libdeath
 //globals from libgy:
 constant boolean LIBRARY_libgy=true
 //endglobals from libgy
@@ -168,6 +171,59 @@ function chuguai takes nothing returns nothing
 endfunction
 
 //library libchuguai ends
+//library libdeath:
+function death_1 takes nothing returns nothing
+    local unit u1=GetKillingUnit()
+    local unit u2=GetTriggerUnit()
+    local player p1=GetOwningPlayer(u1)
+    local integer array li
+    local item it
+    set li[0]=GetHandleId(u1)
+    set li[1]=GetHandleId(p1)
+    if HaveSavedHandle(udg_hs, li[1], 1) then //检测是否绑定有物品
+        set it=LoadItemHandle(udg_hs, li[1], 1) //读取绑定的物品
+        set li[9]=GetHandleId(it) //读取绑定物品的handle
+        set li[10]=LoadInteger(udg_hs, li[9], GetItemLevel(it)) + 1 //读取经验和经验+1
+        set li[11]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
+        set li[12]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
+        set li[13]=( li[11] + 5 ) / 5 //设置升级所需经验
+        if li[10] == li[13] * 100 then //判断升级经验是否足够
+            if ModuloInteger(li[11], 5) != 5 then //判断是否需要材料
+                call UnitAddItem(u1, CreateItem(li[12], GetUnitX(u1), GetUnitY(u1))) //给予强化石
+            endif
+        else //经验不足
+            call SaveInteger(udg_hs, li[9], GetItemLevel(it), li[10]) //记录经验
+            call BJDebugMsg(I2S(li[10]))
+        endif
+    endif
+    if HaveSavedHandle(udg_hs, li[1], 2) then //检测是否绑定有物品
+        set it=LoadItemHandle(udg_hs, li[1], 2) //读取绑定的物品
+        set li[19]=GetHandleId(it) //读取绑定物品的handle
+        set li[20]=LoadInteger(udg_hs, li[19], GetItemLevel(it)) + 1 //读取经验和经验+1
+        set li[21]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
+        set li[22]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
+        set li[23]=( li[21] + 5 ) / 5 //设置升级所需经验
+        if li[20] == li[23] * 100 then //判断升级经验是否足够
+            if ModuloInteger(li[21], 5) != 5 then //判断是否需要材料
+                call UnitAddItem(u1, CreateItem(li[22], GetUnitX(u1), GetUnitY(u1))) //给予强化石
+            endif
+        else //经验不足
+            call SaveInteger(udg_hs, li[19], GetItemLevel(it), li[20]) //记录经验
+        endif
+    endif
+    set it=null
+    set p1=null
+    set u2=null
+    set u1=null
+endfunction
+function death takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    call TriggerAddAction(tr, function death_1)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(11), EVENT_PLAYER_UNIT_DEATH, null)
+    set tr=null
+endfunction
+
+//library libdeath ends
 //library libgy:
     function jz_i2s takes integer inputi returns string
     //进制转换
@@ -852,43 +908,19 @@ function getitem_1 takes nothing returns nothing
             set litem=null
             return //退出
         endif
-        if lv == 2 then //2级武器
+        if lv == 2 or lv == 3 then //2级武器,3级衣服
             set li[0]=0 //初始化循环
             set li[1]=LoadInteger(udg_hs, 22, ti) //读取强化书等级
-            set li[2]=LoadInteger(udg_hs, ti, 100) //读取强化书对应武器类型
+            set li[2]=LoadInteger(udg_hs, ti, lv) //读取强化书对应武器类型
             loop //遍历物品栏
                 exitwhen li[0] == 6
-                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[2] then //判断有无对应武器
-                    set li[4]=GetItemTypeId(UnitItemInSlot(u1, li[0])) //读取对应装备
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[2] then //判断有无对应装备
+                    set li[3]=GetItemTypeId(UnitItemInSlot(u1, li[0])) //读取对应装备
+                    call RemoveSavedInteger(udg_hs, GetHandleId(UnitItemInSlot(u1, li[0])), GetItemLevel(UnitItemInSlot(u1, li[0]))) //清除即将移除的物品绑定哈希表
                     call RemoveItem(UnitItemInSlot(u1, li[0])) //删除旧装备
-                    set litem=CreateItem(LoadInteger(udg_hs, 21, li[4]), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit()))
-                    call UnitAddItem(u1, litem) //创建新装备
-                    call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备已升级成" + GetItemName(litem))
-                    set litem=null
-                    set u1=null
-                    call RemoveItem(GetManipulatedItem()) //能量提升直排
-                    return //退出
-                endif
-                set li[0]=li[0] + 1
-            endloop
-            call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备强化失败，请检查你的装备")
-            call RemoveItem(GetManipulatedItem()) //能量提升直排
-            set litem=null
-            set u1=null
-            return
-        endif
-        if lv == 3 then //3级衣服
-            set li[0]=0 //初始化循环
-            set li[1]=LoadInteger(udg_hs, 22, ti) //读取强化书等级
-            set li[3]=LoadInteger(udg_hs, ti, 101) //读取强化书对应衣服类型
-            loop //遍历物品栏
-                exitwhen li[0] == 6
-                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[3] then //判断有无对应衣服
-                    set li[4]=GetItemTypeId(UnitItemInSlot(u1, li[0])) //读取对应装备
-                    call RemoveItem(UnitItemInSlot(u1, li[0])) //删除旧装备
-                    set litem=CreateItem(LoadInteger(udg_hs, 21, li[4]), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit()))
-                    call UnitAddItem(u1, litem) //创建新装备
-                    call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备已升级成" + GetItemName(litem))
+                    set litem=CreateItem(LoadInteger(udg_hs, 21, li[3]), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit())) //创建新装备
+                    call UnitAddItem(u1, litem) //添加给单位
+                    call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备已升级成" + GetItemName(litem)) //发送辣鸡消息
                     set litem=null
                     set u1=null
                     call RemoveItem(GetManipulatedItem()) //能量提升直排
@@ -905,7 +937,7 @@ function getitem_1 takes nothing returns nothing
         call RemoveItem(GetManipulatedItem()) //能量提升直排
     endif
     if GetItemType(litem) == ITEM_TYPE_PERMANENT then //判断永久物品
-        if lv > 0 and lv < 4 then //一级武器，二级衣服，三级圣兽物品
+        if lv > 0 and lv < 6 then //一级武器，二级衣服，三级手套，四级护符，五级项链
             set li[0]=0
             loop
                 exitwhen li[0] == 6
@@ -917,11 +949,87 @@ function getitem_1 takes nothing returns nothing
                     return
                 endif
                 set li[0]=li[0] + 1
-           endloop
+            endloop
+            if lv < 3 and LoadInteger(udg_hs, 25, ti) < 15 then //小于15级的武器和衣服才绑定
+                call SaveItemHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), lv, litem) //物品绑定玩家
+            endif
+        endif
+    endif
+    if GetItemType(litem) == ITEM_TYPE_PURCHASABLE then
+        if lv == 1 then
+            set li[0]=GetItemLevel(UnitItemInSlot(u1, 0))
+            call RemoveItem(litem)
+            call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, ti, li[0]), GetUnitX(u1), GetUnitY(u1)))
+        endif
+        if lv == 2 then
+            //目前如果玩家拾取到未注册的可购买类物品会崩溃，原因是死循环，因为未注册无法获取需要几个材料
+            set li[0]=LoadInteger(udg_hs, ti, 0) //获取物品合成需要几个材料
+            set li[1]=0 //初始化主循环
+            set li[2]=0 //初始化子循环
+            set li[3]=0 //初始化玩家拥有材料种类数量
+            set li[4]=0 //初始化合成循环
+            loop
+                loop
+                    if GetItemTypeId(UnitItemInSlot(u1, li[2])) == LoadInteger(udg_hs, ti, li[1] + 1) then //判断单位是否有所需材料
+                        call SaveItemHandle(udg_hs, StringHash("材料"), li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
+                        set li[3]=li[3] + 1 //记录材料种类数量
+                        if li[1] == 0 then
+                            set li[5]=GetItemTypeId(UnitItemInSlot(u1, li[2]))
+                        endif
+                    endif
+                    exitwhen li[2] == 5
+                    set li[2]=li[2] + 1
+                endloop
+                set li[1]=li[1] + 1
+                set li[2]=0 //恢复循环数
+                exitwhen li[1] == li[0] //循环所需材料次数
+            endloop
+            if li[0] == li[3] then //玩家已拥有足够的材料
+                set litem=LoadItemHandle(udg_hs, StringHash("材料"), 0) //读取主线材料
+                set li[5]=GetItemTypeId(litem) //读取主线材料ID
+                set li[6]=LoadInteger(udg_hs, 25, li[5]) //读取升级对应的等级
+                set li[7]=( li[6] / 5 ) * 100 //读取升级所需经验
+                set li[8]=GetHandleId(litem)
+                set li[9]=GetItemLevel(litem)
+                set li[10]=LoadInteger(udg_hs, li[8], li[9])
+                set li[11]=0 //判读是否具备升级条件
+                if GetItemType(litem) == ITEM_TYPE_PERMANENT and li[6] < 16 and ModuloInteger(li[6], 5) == 0 then
+                    if li[7] == li[10] then
+                    else
+                    call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "材料已齐全，装备经验不足")
+                    set li[11]=1 //拒绝升级
+                    endif
+                endif
+                if li[11] == 0 then
+                    if LoadBoolean(udg_hs, ti, 10) then //判断是合成还是强化，区别在强化的循环
+                        loop //删除多余物品
+                            set li[4]=li[4] + 1
+                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            exitwhen li[4] == li[0]
+                        endloop
+                        //进入强化阶段
+                        call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
+                    else
+                        loop //删除多余物品
+                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            exitwhen li[4] == li[0]
+                            set li[4]=li[4] + 1
+                        endloop
+                        //进入合成阶段
+                        call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
+                    endif
+                endif
+            endif
+            call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
         endif
     endif
     set litem=null
     set u1=null
+endfunction
+function dropitem takes nothing returns nothing
+    if GetItemType(GetManipulatedItem()) == ITEM_TYPE_PERMANENT then //判断丢弃了永久物品
+        call RemoveSavedHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), GetItemLevel(GetManipulatedItem())) //清除单位的绑定
+    endif
 endfunction
 function getitem takes nothing returns nothing
     local trigger tr=CreateTrigger()
@@ -930,6 +1038,9 @@ function getitem takes nothing returns nothing
     set tr=CreateTrigger()
     call TriggerAddAction(tr, function getitem_2)
     call SaveTriggerHandle(udg_hs, 0, StringHash("宠物获得物品触发"), tr)
+    set tr=CreateTrigger()
+    call TriggerAddAction(tr, function dropitem)
+    call SaveTriggerHandle(udg_hs, 0, StringHash("丢弃物品触发"), tr)
     set tr=null
 endfunction
 
@@ -1031,6 +1142,7 @@ function xzyx1 takes nothing returns nothing
                 call DisplayTimedTextToPlayer(GetLocalPlayer(), 0, 0, 10, msgys(GetPlayerName(GetTriggerPlayer()) + " 选择了 " + GetObjectName(GetUnitTypeId(GetTriggerUnit())))) //发送消息
                 call SetUnitInvulnerable(GetTriggerUnit(), false) //取消无敌
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("获得物品触发")), GetTriggerUnit(), EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("丢弃物品触发")), GetTriggerUnit(), EVENT_UNIT_DROP_ITEM) //注册单位丢弃物品事件
                 set u1=CreateUnit(Player(15), 'HB00', LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77), LoadReal(udg_hs, 6, 77)) //创建菜单英雄
                 call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("菜单触发")), GetTriggerPlayer(), EVENT_PLAYER_UNIT_SELECTED, null) //再次注册选择单位触发
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("科技")), u1, EVENT_UNIT_RESEARCH_FINISH) //注册科技共享触发
@@ -1183,6 +1295,50 @@ endfunction
 
 //library libyg ends
 //library csh:
+    function itemreg takes integer id1,integer n1,integer id2,integer n2,integer id3,integer n3,integer id4,integer n4,integer id5,integer n5,integer id6,integer n6,integer id7,integer n7,boolean bo returns nothing
+    local integer array id
+    set id[0]=6
+    set id[1]=id1
+    set id[2]=id2
+    set id[3]=id3
+    set id[4]=id4
+    set id[5]=id5
+    set id[6]=id6
+    set id[7]=n1
+    set id[8]=n2
+    set id[9]=n3
+    set id[10]=n4
+    set id[11]=n5
+    set id[12]=n6
+    call SaveInteger(udg_hs, id1, 20, id7) //第一个参数要强化的装备，第二个固定参数，第三个要给予的结果
+    loop
+        set id[0]=id[0] + 1
+        call SaveInteger(udg_hs, id[id[0] - 5], 0, n7) //合成所需材料数量
+        call SaveInteger(udg_hs, id[id[0] - 5], 1, id1) //合成的主线装备
+        if n1 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 1, id1) //合成的材料
+        endif
+        if n2 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 2, id2) //合成的材料
+        endif
+        if n3 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 3, id3) //合成的材料
+        endif
+        if n4 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 4, id4) //合成的材料
+        endif
+        if n5 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 5, id5) //合成的材料
+        endif
+        if n6 != 0 then
+            call SaveInteger(udg_hs, id[id[0] - 5], 6, id6) //合成的材料
+        endif
+        call SaveBoolean(udg_hs, id[id[0] - 5], 10, bo) //属于强化
+        exitwhen id[id[0]] == 0
+        
+        
+    endloop
+    endfunction
     function LUAcreateunit takes nothing returns nothing
     local unit unitt
     local integer loopli=0
@@ -2909,6 +3065,14 @@ endfunction
     
     call CreateItem('IB3Z', 860, - 3840)
     
+    call CreateItem('IB40', 870, - 3840)
+    
+    call CreateItem('IB41', 880, - 3840)
+    
+    call CreateItem('IB42', 890, - 3840)
+    
+    call CreateItem('IB43', 900, - 3840)
+    
     call SetPlayerAbilityAvailable(Player(0), 'A001', false) //禁用所有天赋
     
     call SetPlayerAbilityAvailable(Player(0), 'A002', false) //禁用所有天赋
@@ -3089,347 +3253,427 @@ endfunction
     
     call SetPlayerAbilityAvailable(Player(5), 'A00F', false) //禁用所有天赋
     
-    call SaveInteger(udg_hs, 22, 'IC00', 1) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB00', 'IB01') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC00', 100, 'IB00') //获得物品对应装备
-    call CreateItem('IC00', - 2048, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC00', 1) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB00', 'IB01') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC00', 2, 'IB00') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB00', 1) //存储装备等级
+    call SaveInteger(udg_hs, 'IB00', 2, 'IC00') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC01', 2) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB01', 'IB02') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC01', 100, 'IB01') //获得物品对应装备
-    call CreateItem('IC01', - 1920, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC01', 2) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB01', 'IB02') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC01', 2, 'IB01') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB01', 2) //存储装备等级
+    call SaveInteger(udg_hs, 'IB01', 2, 'IC01') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC02', 3) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB02', 'IB03') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC02', 100, 'IB02') //获得物品对应装备
-    call CreateItem('IC02', - 1792, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC02', 3) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB02', 'IB03') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC02', 2, 'IB02') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB02', 3) //存储装备等级
+    call SaveInteger(udg_hs, 'IB02', 2, 'IC02') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC03', 4) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB03', 'IB04') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC03', 100, 'IB03') //获得物品对应装备
-    call CreateItem('IC03', - 1664, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC03', 4) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB03', 'IB04') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC03', 2, 'IB03') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB03', 4) //存储装备等级
+    call SaveInteger(udg_hs, 'IB03', 2, 'IC03') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC04', 5) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB04', 'IB05') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC04', 100, 'IB04') //获得物品对应装备
-    call CreateItem('IC04', - 1536, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC04', 5) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB04', 'IB05') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC04', 2, 'IB04') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB04', 5) //存储装备等级
+    call SaveInteger(udg_hs, 'IB04', 2, 'IC04') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC05', 6) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB05', 'IB06') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC05', 100, 'IB05') //获得物品对应装备
-    call CreateItem('IC05', - 1408, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC05', 6) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB05', 'IB06') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC05', 2, 'IB05') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB05', 6) //存储装备等级
+    call SaveInteger(udg_hs, 'IB05', 2, 'IC05') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC06', 7) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB06', 'IB07') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC06', 100, 'IB06') //获得物品对应装备
-    call CreateItem('IC06', - 1280, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC06', 7) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB06', 'IB07') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC06', 2, 'IB06') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB06', 7) //存储装备等级
+    call SaveInteger(udg_hs, 'IB06', 2, 'IC06') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC07', 8) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB07', 'IB08') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC07', 100, 'IB07') //获得物品对应装备
-    call CreateItem('IC07', - 1152, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC07', 8) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB07', 'IB08') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC07', 2, 'IB07') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB07', 8) //存储装备等级
+    call SaveInteger(udg_hs, 'IB07', 2, 'IC07') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC08', 9) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB08', 'IB09') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC08', 100, 'IB08') //获得物品对应装备
-    call CreateItem('IC08', - 1024, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC08', 9) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB08', 'IB09') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC08', 2, 'IB08') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB08', 9) //存储装备等级
+    call SaveInteger(udg_hs, 'IB08', 2, 'IC08') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC09', 10) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB09', 'IB0A') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC09', 100, 'IB09') //获得物品对应装备
-    call CreateItem('IC09', - 896, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC09', 10) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB09', 'IB0A') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC09', 2, 'IB09') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB09', 10) //存储装备等级
+    call SaveInteger(udg_hs, 'IB09', 2, 'IC09') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0A', 11) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0A', 'IB0B') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0A', 100, 'IB0A') //获得物品对应装备
-    call CreateItem('IC0A', - 768, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0A', 11) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0A', 'IB0B') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0A', 2, 'IB0A') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0A', 11) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0A', 2, 'IC0A') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0B', 12) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0B', 'IB0C') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0B', 100, 'IB0B') //获得物品对应装备
-    call CreateItem('IC0B', - 640, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0B', 12) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0B', 'IB0C') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0B', 2, 'IB0B') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0B', 12) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0B', 2, 'IC0B') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0C', 13) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0C', 'IB0D') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0C', 100, 'IB0C') //获得物品对应装备
-    call CreateItem('IC0C', - 512, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0C', 13) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0C', 'IB0D') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0C', 2, 'IB0C') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0C', 13) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0C', 2, 'IC0C') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0D', 14) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0D', 'IB0E') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0D', 100, 'IB0D') //获得物品对应装备
-    call CreateItem('IC0D', - 384, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0D', 14) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0D', 'IB0E') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0D', 2, 'IB0D') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0D', 14) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0D', 2, 'IC0D') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0E', 15) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0E', 'IB0F') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0E', 100, 'IB0E') //获得物品对应装备
-    call CreateItem('IC0E', - 256, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0E', 15) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0E', 'IB0F') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0E', 2, 'IB0E') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0E', 15) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0E', 2, 'IC0E') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0F', 16) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0F', 'IB0G') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0F', 100, 'IB0F') //获得物品对应装备
-    call CreateItem('IC0F', - 128, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0F', 16) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0F', 'IB0G') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0F', 2, 'IB0F') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0F', 16) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0F', 2, 'IC0F') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0G', 17) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0G', 'IB0H') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0G', 100, 'IB0G') //获得物品对应装备
-    call CreateItem('IC0G', 0, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0G', 17) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0G', 'IB0H') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0G', 2, 'IB0G') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0G', 17) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0G', 2, 'IC0G') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0H', 18) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0H', 'IB0I') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0H', 100, 'IB0H') //获得物品对应装备
-    call CreateItem('IC0H', 128, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0H', 18) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0H', 'IB0I') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0H', 2, 'IB0H') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0H', 18) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0H', 2, 'IC0H') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0I', 19) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0I', 'IB0J') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0I', 100, 'IB0I') //获得物品对应装备
-    call CreateItem('IC0I', 256, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0I', 19) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0I', 'IB0J') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0I', 2, 'IB0I') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0I', 19) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0I', 2, 'IC0I') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0J', 20) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0J', 'IB0K') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0J', 100, 'IB0J') //获得物品对应装备
-    call CreateItem('IC0J', 384, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0J', 20) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0J', 'IB0K') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0J', 2, 'IB0J') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0J', 20) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0J', 2, 'IC0J') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0K', 21) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0K', 'IB0L') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0K', 100, 'IB0K') //获得物品对应装备
-    call CreateItem('IC0K', 512, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0K', 21) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0K', 'IB0L') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0K', 2, 'IB0K') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0K', 21) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0K', 2, 'IC0K') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0L', 22) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0L', 'IB0M') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0L', 100, 'IB0L') //获得物品对应装备
-    call CreateItem('IC0L', 640, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0L', 22) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0L', 'IB0M') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0L', 2, 'IB0L') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0L', 22) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0L', 2, 'IC0L') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0M', 23) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0M', 'IB0N') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0M', 100, 'IB0M') //获得物品对应装备
-    call CreateItem('IC0M', 768, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0M', 23) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0M', 'IB0N') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0M', 2, 'IB0M') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0M', 23) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0M', 2, 'IC0M') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0N', 24) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0N', 'IB0O') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0N', 100, 'IB0N') //获得物品对应装备
-    call CreateItem('IC0N', 896, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0N', 24) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0N', 'IB0O') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0N', 2, 'IB0N') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0N', 24) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0N', 2, 'IC0N') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0O', 25) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0O', 'IB0P') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0O', 100, 'IB0O') //获得物品对应装备
-    call CreateItem('IC0O', 1024, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0O', 25) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0O', 'IB0P') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0O', 2, 'IB0O') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0O', 25) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0O', 2, 'IC0O') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0P', 26) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0P', 'IB0Q') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0P', 100, 'IB0P') //获得物品对应装备
-    call CreateItem('IC0P', 1152, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0P', 26) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0P', 'IB0Q') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0P', 2, 'IB0P') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0P', 26) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0P', 2, 'IC0P') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0Q', 27) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0Q', 'IB0R') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0Q', 100, 'IB0Q') //获得物品对应装备
-    call CreateItem('IC0Q', 1280, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0Q', 27) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0Q', 'IB0R') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0Q', 2, 'IB0Q') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0Q', 27) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0Q', 2, 'IC0Q') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0R', 28) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0R', 'IB0S') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0R', 100, 'IB0R') //获得物品对应装备
-    call CreateItem('IC0R', 1408, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0R', 28) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0R', 'IB0S') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0R', 2, 'IB0R') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0R', 28) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0R', 2, 'IC0R') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0S', 29) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0S', 'IB0T') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0S', 100, 'IB0S') //获得物品对应装备
-    call CreateItem('IC0S', 1536, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0S', 29) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0S', 'IB0T') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0S', 2, 'IB0S') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0S', 29) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0S', 2, 'IC0S') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0T', 30) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0T', 'IB0U') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0T', 100, 'IB0T') //获得物品对应装备
-    call CreateItem('IC0T', 1664, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0T', 30) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0T', 'IB0U') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0T', 2, 'IB0T') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0T', 30) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0T', 2, 'IC0T') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0U', 31) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0U', 'IB0V') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0U', 100, 'IB0U') //获得物品对应装备
-    call CreateItem('IC0U', 1792, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0U', 31) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0U', 'IB0V') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0U', 2, 'IB0U') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0U', 31) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0U', 2, 'IC0U') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0V', 32) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0V', 'IB0W') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0V', 100, 'IB0V') //获得物品对应装备
-    call CreateItem('IC0V', 1920, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0V', 32) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0V', 'IB0W') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0V', 2, 'IB0V') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0V', 32) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0V', 2, 'IC0V') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0W', 33) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0W', 'IB0X') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0W', 100, 'IB0W') //获得物品对应装备
-    call CreateItem('IC0W', 2048, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0W', 33) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0W', 'IB0X') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0W', 2, 'IB0W') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0W', 33) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0W', 2, 'IC0W') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0X', 34) //获得物品等级
-    call SaveInteger(udg_hs, 21, 'IB0X', 'IB0Y') //获得装备的下一级
-    call SaveInteger(udg_hs, 'IC0X', 100, 'IB0X') //获得物品对应装备
-    call CreateItem('IC0X', 2176, - 1280) //这条是测试的
+    call SaveInteger(udg_hs, 22, 'IC0X', 34) //存储物品等级
+    call SaveInteger(udg_hs, 21, 'IB0X', 'IB0Y') //存储装备的下一级
+    call SaveInteger(udg_hs, 'IC0X', 2, 'IB0X') //存储物品对应装备
+    call SaveInteger(udg_hs, 25, 'IB0X', 34) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0X', 2, 'IC0X') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC0Z', 1)
+    call SaveInteger(udg_hs, 22, 'IC0Y', 1)
     call SaveInteger(udg_hs, 21, 'IB1D', 'IB1E')
-    call SaveInteger(udg_hs, 'IC0Z', 101, 'IB1D')
-    call CreateItem('IC0Z', - 2048, - 1024)
+    call SaveInteger(udg_hs, 'IC0Y', 3, 'IB1D')
+    call SaveInteger(udg_hs, 25, 'IB1D', 1) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1D', 2, 'IC0Y') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC11', 2)
+    call SaveInteger(udg_hs, 22, 'IC0Z', 2)
     call SaveInteger(udg_hs, 21, 'IB1E', 'IB1F')
-    call SaveInteger(udg_hs, 'IC11', 101, 'IB1E')
-    call CreateItem('IC11', - 1920, - 1024)
+    call SaveInteger(udg_hs, 'IC0Z', 3, 'IB1E')
+    call SaveInteger(udg_hs, 25, 'IB1E', 2) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1E', 2, 'IC0Z') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC13', 3)
+    call SaveInteger(udg_hs, 22, 'IC10', 3)
     call SaveInteger(udg_hs, 21, 'IB1F', 'IB1G')
-    call SaveInteger(udg_hs, 'IC13', 101, 'IB1F')
-    call CreateItem('IC13', - 1792, - 1024)
+    call SaveInteger(udg_hs, 'IC10', 3, 'IB1F')
+    call SaveInteger(udg_hs, 25, 'IB1F', 3) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1F', 2, 'IC10') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC15', 4)
+    call SaveInteger(udg_hs, 22, 'IC11', 4)
     call SaveInteger(udg_hs, 21, 'IB1G', 'IB1H')
-    call SaveInteger(udg_hs, 'IC15', 101, 'IB1G')
-    call CreateItem('IC15', - 1664, - 1024)
+    call SaveInteger(udg_hs, 'IC11', 3, 'IB1G')
+    call SaveInteger(udg_hs, 25, 'IB1G', 4) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1G', 2, 'IC11') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC17', 5)
+    call SaveInteger(udg_hs, 22, 'IC12', 5)
     call SaveInteger(udg_hs, 21, 'IB1H', 'IB1I')
-    call SaveInteger(udg_hs, 'IC17', 101, 'IB1H')
-    call CreateItem('IC17', - 1536, - 1024)
+    call SaveInteger(udg_hs, 'IC12', 3, 'IB1H')
+    call SaveInteger(udg_hs, 25, 'IB1H', 5) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1H', 2, 'IC12') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC19', 6)
+    call SaveInteger(udg_hs, 22, 'IC13', 6)
     call SaveInteger(udg_hs, 21, 'IB1I', 'IB1J')
-    call SaveInteger(udg_hs, 'IC19', 101, 'IB1I')
-    call CreateItem('IC19', - 1408, - 1024)
+    call SaveInteger(udg_hs, 'IC13', 3, 'IB1I')
+    call SaveInteger(udg_hs, 25, 'IB1I', 6) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1I', 2, 'IC13') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1B', 7)
+    call SaveInteger(udg_hs, 22, 'IC14', 7)
     call SaveInteger(udg_hs, 21, 'IB1J', 'IB1K')
-    call SaveInteger(udg_hs, 'IC1B', 101, 'IB1J')
-    call CreateItem('IC1B', - 1280, - 1024)
+    call SaveInteger(udg_hs, 'IC14', 3, 'IB1J')
+    call SaveInteger(udg_hs, 25, 'IB1J', 7) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1J', 2, 'IC14') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1D', 8)
+    call SaveInteger(udg_hs, 22, 'IC15', 8)
     call SaveInteger(udg_hs, 21, 'IB1K', 'IB1L')
-    call SaveInteger(udg_hs, 'IC1D', 101, 'IB1K')
-    call CreateItem('IC1D', - 1152, - 1024)
+    call SaveInteger(udg_hs, 'IC15', 3, 'IB1K')
+    call SaveInteger(udg_hs, 25, 'IB1K', 8) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1K', 2, 'IC15') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1F', 9)
+    call SaveInteger(udg_hs, 22, 'IC16', 9)
     call SaveInteger(udg_hs, 21, 'IB1L', 'IB1M')
-    call SaveInteger(udg_hs, 'IC1F', 101, 'IB1L')
-    call CreateItem('IC1F', - 1024, - 1024)
+    call SaveInteger(udg_hs, 'IC16', 3, 'IB1L')
+    call SaveInteger(udg_hs, 25, 'IB1L', 9) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1L', 2, 'IC16') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1H', 10)
+    call SaveInteger(udg_hs, 22, 'IC17', 10)
     call SaveInteger(udg_hs, 21, 'IB1M', 'IB1N')
-    call SaveInteger(udg_hs, 'IC1H', 101, 'IB1M')
-    call CreateItem('IC1H', - 896, - 1024)
+    call SaveInteger(udg_hs, 'IC17', 3, 'IB1M')
+    call SaveInteger(udg_hs, 25, 'IB1M', 10) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1M', 2, 'IC17') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1J', 11)
+    call SaveInteger(udg_hs, 22, 'IC18', 11)
     call SaveInteger(udg_hs, 21, 'IB1N', 'IB1O')
-    call SaveInteger(udg_hs, 'IC1J', 101, 'IB1N')
-    call CreateItem('IC1J', - 768, - 1024)
+    call SaveInteger(udg_hs, 'IC18', 3, 'IB1N')
+    call SaveInteger(udg_hs, 25, 'IB1N', 11) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1N', 2, 'IC18') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1L', 12)
+    call SaveInteger(udg_hs, 22, 'IC19', 12)
     call SaveInteger(udg_hs, 21, 'IB1O', 'IB1P')
-    call SaveInteger(udg_hs, 'IC1L', 101, 'IB1O')
-    call CreateItem('IC1L', - 640, - 1024)
+    call SaveInteger(udg_hs, 'IC19', 3, 'IB1O')
+    call SaveInteger(udg_hs, 25, 'IB1O', 12) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1O', 2, 'IC19') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1N', 13)
+    call SaveInteger(udg_hs, 22, 'IC1A', 13)
     call SaveInteger(udg_hs, 21, 'IB1P', 'IB1Q')
-    call SaveInteger(udg_hs, 'IC1N', 101, 'IB1P')
-    call CreateItem('IC1N', - 512, - 1024)
+    call SaveInteger(udg_hs, 'IC1A', 3, 'IB1P')
+    call SaveInteger(udg_hs, 25, 'IB1P', 13) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1P', 2, 'IC1A') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1P', 14)
+    call SaveInteger(udg_hs, 22, 'IC1B', 14)
     call SaveInteger(udg_hs, 21, 'IB1Q', 'IB1R')
-    call SaveInteger(udg_hs, 'IC1P', 101, 'IB1Q')
-    call CreateItem('IC1P', - 384, - 1024)
+    call SaveInteger(udg_hs, 'IC1B', 3, 'IB1Q')
+    call SaveInteger(udg_hs, 25, 'IB1Q', 14) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1Q', 2, 'IC1B') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1R', 15)
+    call SaveInteger(udg_hs, 22, 'IC1C', 15)
     call SaveInteger(udg_hs, 21, 'IB1R', 'IB1S')
-    call SaveInteger(udg_hs, 'IC1R', 101, 'IB1R')
-    call CreateItem('IC1R', - 256, - 1024)
+    call SaveInteger(udg_hs, 'IC1C', 3, 'IB1R')
+    call SaveInteger(udg_hs, 25, 'IB1R', 15) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1R', 2, 'IC1C') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1T', 16)
+    call SaveInteger(udg_hs, 22, 'IC1D', 16)
     call SaveInteger(udg_hs, 21, 'IB1S', 'IB1T')
-    call SaveInteger(udg_hs, 'IC1T', 101, 'IB1S')
-    call CreateItem('IC1T', - 128, - 1024)
+    call SaveInteger(udg_hs, 'IC1D', 3, 'IB1S')
+    call SaveInteger(udg_hs, 25, 'IB1S', 16) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1S', 2, 'IC1D') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1V', 17)
+    call SaveInteger(udg_hs, 22, 'IC1E', 17)
     call SaveInteger(udg_hs, 21, 'IB1T', 'IB1U')
-    call SaveInteger(udg_hs, 'IC1V', 101, 'IB1T')
-    call CreateItem('IC1V', 0, - 1024)
+    call SaveInteger(udg_hs, 'IC1E', 3, 'IB1T')
+    call SaveInteger(udg_hs, 25, 'IB1T', 17) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1T', 2, 'IC1E') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1X', 18)
+    call SaveInteger(udg_hs, 22, 'IC1F', 18)
     call SaveInteger(udg_hs, 21, 'IB1U', 'IB1V')
-    call SaveInteger(udg_hs, 'IC1X', 101, 'IB1U')
-    call CreateItem('IC1X', 128, - 1024)
+    call SaveInteger(udg_hs, 'IC1F', 3, 'IB1U')
+    call SaveInteger(udg_hs, 25, 'IB1U', 18) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1U', 2, 'IC1F') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC1Z', 19)
+    call SaveInteger(udg_hs, 22, 'IC1G', 19)
     call SaveInteger(udg_hs, 21, 'IB1V', 'IB1W')
-    call SaveInteger(udg_hs, 'IC1Z', 101, 'IB1V')
-    call CreateItem('IC1Z', 256, - 1024)
+    call SaveInteger(udg_hs, 'IC1G', 3, 'IB1V')
+    call SaveInteger(udg_hs, 25, 'IB1V', 19) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1V', 2, 'IC1G') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC21', 20)
+    call SaveInteger(udg_hs, 22, 'IC1H', 20)
     call SaveInteger(udg_hs, 21, 'IB1W', 'IB1X')
-    call SaveInteger(udg_hs, 'IC21', 101, 'IB1W')
-    call CreateItem('IC21', 384, - 1024)
+    call SaveInteger(udg_hs, 'IC1H', 3, 'IB1W')
+    call SaveInteger(udg_hs, 25, 'IB1W', 20) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1W', 2, 'IC1H') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC23', 21)
+    call SaveInteger(udg_hs, 22, 'IC1I', 21)
     call SaveInteger(udg_hs, 21, 'IB1X', 'IB1Y')
-    call SaveInteger(udg_hs, 'IC23', 101, 'IB1X')
-    call CreateItem('IC23', 512, - 1024)
+    call SaveInteger(udg_hs, 'IC1I', 3, 'IB1X')
+    call SaveInteger(udg_hs, 25, 'IB1X', 21) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1X', 2, 'IC1I') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC25', 22)
+    call SaveInteger(udg_hs, 22, 'IC1J', 22)
     call SaveInteger(udg_hs, 21, 'IB1Y', 'IB1Z')
-    call SaveInteger(udg_hs, 'IC25', 101, 'IB1Y')
-    call CreateItem('IC25', 640, - 1024)
+    call SaveInteger(udg_hs, 'IC1J', 3, 'IB1Y')
+    call SaveInteger(udg_hs, 25, 'IB1Y', 22) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1Y', 2, 'IC1J') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC27', 23)
+    call SaveInteger(udg_hs, 22, 'IC1K', 23)
     call SaveInteger(udg_hs, 21, 'IB1Z', 'IB20')
-    call SaveInteger(udg_hs, 'IC27', 101, 'IB1Z')
-    call CreateItem('IC27', 768, - 1024)
+    call SaveInteger(udg_hs, 'IC1K', 3, 'IB1Z')
+    call SaveInteger(udg_hs, 25, 'IB1Z', 23) //存储装备等级
+    call SaveInteger(udg_hs, 'IB1Z', 2, 'IC1K') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC29', 24)
+    call SaveInteger(udg_hs, 22, 'IC1L', 24)
     call SaveInteger(udg_hs, 21, 'IB20', 'IB21')
-    call SaveInteger(udg_hs, 'IC29', 101, 'IB20')
-    call CreateItem('IC29', 896, - 1024)
+    call SaveInteger(udg_hs, 'IC1L', 3, 'IB20')
+    call SaveInteger(udg_hs, 25, 'IB20', 24) //存储装备等级
+    call SaveInteger(udg_hs, 'IB20', 2, 'IC1L') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2B', 25)
+    call SaveInteger(udg_hs, 22, 'IC1M', 25)
     call SaveInteger(udg_hs, 21, 'IB21', 'IB22')
-    call SaveInteger(udg_hs, 'IC2B', 101, 'IB21')
-    call CreateItem('IC2B', 1024, - 1024)
+    call SaveInteger(udg_hs, 'IC1M', 3, 'IB21')
+    call SaveInteger(udg_hs, 25, 'IB21', 25) //存储装备等级
+    call SaveInteger(udg_hs, 'IB21', 2, 'IC1M') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2D', 26)
+    call SaveInteger(udg_hs, 22, 'IC1N', 26)
     call SaveInteger(udg_hs, 21, 'IB22', 'IB23')
-    call SaveInteger(udg_hs, 'IC2D', 101, 'IB22')
-    call CreateItem('IC2D', 1152, - 1024)
+    call SaveInteger(udg_hs, 'IC1N', 3, 'IB22')
+    call SaveInteger(udg_hs, 25, 'IB22', 26) //存储装备等级
+    call SaveInteger(udg_hs, 'IB22', 2, 'IC1N') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2F', 27)
+    call SaveInteger(udg_hs, 22, 'IC1O', 27)
     call SaveInteger(udg_hs, 21, 'IB23', 'IB24')
-    call SaveInteger(udg_hs, 'IC2F', 101, 'IB23')
-    call CreateItem('IC2F', 1280, - 1024)
+    call SaveInteger(udg_hs, 'IC1O', 3, 'IB23')
+    call SaveInteger(udg_hs, 25, 'IB23', 27) //存储装备等级
+    call SaveInteger(udg_hs, 'IB23', 2, 'IC1O') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2H', 28)
+    call SaveInteger(udg_hs, 22, 'IC1P', 28)
     call SaveInteger(udg_hs, 21, 'IB24', 'IB25')
-    call SaveInteger(udg_hs, 'IC2H', 101, 'IB24')
-    call CreateItem('IC2H', 1408, - 1024)
+    call SaveInteger(udg_hs, 'IC1P', 3, 'IB24')
+    call SaveInteger(udg_hs, 25, 'IB24', 28) //存储装备等级
+    call SaveInteger(udg_hs, 'IB24', 2, 'IC1P') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2J', 29)
+    call SaveInteger(udg_hs, 22, 'IC1Q', 29)
     call SaveInteger(udg_hs, 21, 'IB25', 'IB26')
-    call SaveInteger(udg_hs, 'IC2J', 101, 'IB25')
-    call CreateItem('IC2J', 1536, - 1024)
+    call SaveInteger(udg_hs, 'IC1Q', 3, 'IB25')
+    call SaveInteger(udg_hs, 25, 'IB25', 29) //存储装备等级
+    call SaveInteger(udg_hs, 'IB25', 2, 'IC1Q') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2L', 30)
+    call SaveInteger(udg_hs, 22, 'IC1R', 30)
     call SaveInteger(udg_hs, 21, 'IB26', 'IB27')
-    call SaveInteger(udg_hs, 'IC2L', 101, 'IB26')
-    call CreateItem('IC2L', 1664, - 1024)
+    call SaveInteger(udg_hs, 'IC1R', 3, 'IB26')
+    call SaveInteger(udg_hs, 25, 'IB26', 30) //存储装备等级
+    call SaveInteger(udg_hs, 'IB26', 2, 'IC1R') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2N', 31)
+    call SaveInteger(udg_hs, 22, 'IC1S', 31)
     call SaveInteger(udg_hs, 21, 'IB27', 'IB28')
-    call SaveInteger(udg_hs, 'IC2N', 101, 'IB27')
-    call CreateItem('IC2N', 1792, - 1024)
+    call SaveInteger(udg_hs, 'IC1S', 3, 'IB27')
+    call SaveInteger(udg_hs, 25, 'IB27', 31) //存储装备等级
+    call SaveInteger(udg_hs, 'IB27', 2, 'IC1S') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2P', 32)
+    call SaveInteger(udg_hs, 22, 'IC1T', 32)
     call SaveInteger(udg_hs, 21, 'IB28', 'IB29')
-    call SaveInteger(udg_hs, 'IC2P', 101, 'IB28')
-    call CreateItem('IC2P', 1920, - 1024)
+    call SaveInteger(udg_hs, 'IC1T', 3, 'IB28')
+    call SaveInteger(udg_hs, 25, 'IB28', 32) //存储装备等级
+    call SaveInteger(udg_hs, 'IB28', 2, 'IC1T') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2R', 33)
+    call SaveInteger(udg_hs, 22, 'IC1U', 33)
     call SaveInteger(udg_hs, 21, 'IB29', 'IB2A')
-    call SaveInteger(udg_hs, 'IC2R', 101, 'IB29')
-    call CreateItem('IC2R', 2048, - 1024)
+    call SaveInteger(udg_hs, 'IC1U', 3, 'IB29')
+    call SaveInteger(udg_hs, 25, 'IB29', 33) //存储装备等级
+    call SaveInteger(udg_hs, 'IB29', 2, 'IC1U') //存储装备对应物品
     
-    call SaveInteger(udg_hs, 22, 'IC2T', 34)
+    call SaveInteger(udg_hs, 22, 'IC1V', 34)
     call SaveInteger(udg_hs, 21, 'IB2A', 'IB2B')
-    call SaveInteger(udg_hs, 'IC2T', 101, 'IB2A')
-    call CreateItem('IC2T', 2176, - 1024)
+    call SaveInteger(udg_hs, 'IC1V', 3, 'IB2A')
+    call SaveInteger(udg_hs, 25, 'IB2A', 34) //存储装备等级
+    call SaveInteger(udg_hs, 'IB2A', 2, 'IC1V') //存储装备对应物品
     
     call SetMusicVolume(PercentToInt(50, 127))
+    //新手装备初始化
+    call SaveInteger(udg_hs, 'IB3U', 1, 'IC00')
+    call SaveInteger(udg_hs, 'IB3U', 2, 'IC0Y')
+    call SaveInteger(udg_hs, 'IB3V', 1, 'IC01')
+    call SaveInteger(udg_hs, 'IB3V', 2, 'IC0Z')
+    call SaveInteger(udg_hs, 'IB3W', 1, 'IC02')
+    call SaveInteger(udg_hs, 'IB3W', 2, 'IC10')
+    call SaveInteger(udg_hs, 'IB3X', 1, 'IC03')
+    call SaveInteger(udg_hs, 'IB3X', 2, 'IC11')
+    //装备强化和合成初始化函数
+    call itemreg('IB04' , 1 , 'IB3Z' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC04' , 2 , true)
+    call itemreg('IB1R' , 1 , 'IB3D' , 1 , 'IB3E' , 1 , 'IB3F' , 1 , 'IB3G' , 1 , 0 , 0 , 'IC1C' , 5 , true)
     
     set ttt=null
     endfunction 
@@ -3446,6 +3690,7 @@ endfunction
         call ajidi() //注册攻击基地
         call kj() //注册科技同步
         call bgj() //注册被攻击事件
+        call death() //注册死亡事件
     endfunction
 
 //library csh ends
@@ -3455,7 +3700,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Sat Jun 09 06:25:56 2018
+//   Date: Sun Jun 10 10:36:44 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================
@@ -3465,6 +3710,20 @@ endfunction
 //*
 //***************************************************************************
 function InitGlobals takes nothing returns nothing
+endfunction
+//***************************************************************************
+//*
+//*  Items
+//*
+//***************************************************************************
+function CreateAllItems takes nothing returns nothing
+    local integer itemID
+    call CreateItem('IB1R', 1098.7, - 4703.1)
+    call CreateItem('IB3D', 1086.0, - 4790.4)
+    call CreateItem('IB3E', 1082.4, - 4871.3)
+    call CreateItem('IB3F', 1073.0, - 4939.9)
+    call CreateItem('IB3G', 1071.9, - 5009.9)
+    call CreateItem('IC00', 745.1, - 4899.5)
 endfunction
 //***************************************************************************
 //*
@@ -3551,6 +3810,7 @@ function main takes nothing returns nothing
     call SetAmbientDaySound("CityScapeDay")
     call SetAmbientNightSound("CityScapeNight")
     call SetMapMusic("Music", true, 0)
+    call CreateAllItems()
     call InitBlizzard()
 
 call ExecuteFunc("csh___init")

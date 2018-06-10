@@ -26,6 +26,7 @@ function xzyx1 takes nothing returns nothing
                 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,10,msgys(GetPlayerName(GetTriggerPlayer())+" 选择了 "+GetObjectName(GetUnitTypeId(GetTriggerUnit()))))//发送消息
                 call SetUnitInvulnerable(GetTriggerUnit(),false)//取消无敌
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("获得物品触发")),GetTriggerUnit(),EVENT_UNIT_PICKUP_ITEM)//注册单位获得物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("丢弃物品触发")),GetTriggerUnit(),EVENT_UNIT_DROP_ITEM)//注册单位丢弃物品事件
                 set u1=CreateUnit(Player(15),'HB00',LoadReal(udg_hs,4,77),LoadReal(udg_hs,5,77),LoadReal(udg_hs,6,77))//创建菜单英雄
                 call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("菜单触发")),GetTriggerPlayer(),EVENT_PLAYER_UNIT_SELECTED,null)//再次注册选择单位触发
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("科技")),u1,EVENT_UNIT_RESEARCH_FINISH)//注册科技共享触发
