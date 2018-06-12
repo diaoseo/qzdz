@@ -20,6 +20,11 @@ endfunction
 function yg takes nothing returns nothing//副本死亡触发
     local timer t=CreateTimer()//新建计时器
     local trigger tr=CreateTrigger()//创建新触发
+    local integer li
+    if HaveSavedInteger(udg_hs,GetUnitTypeId(GetTriggerUnit()),1000) then
+        set li=LoadInteger(udg_hs,GetUnitTypeId(GetTriggerUnit()),1000)
+        call CreateItem(LoadInteger(udg_hs,GetUnitTypeId(GetTriggerUnit()),GetRandomInt(1,li)),GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()))
+    endif
     call TriggerAddAction(tr,function yg)//新触发添加动作
     call DestroyTrigger(GetTriggeringTrigger())//删除触发触发
     call SaveInteger(udg_hs,GetHandleId(t),StringHash("复活boss"),GetUnitTypeId(GetTriggerUnit()))//保存死亡的类型

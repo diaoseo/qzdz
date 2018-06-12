@@ -37,7 +37,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set litem=null
             return//退出
         endif
-        if lv==2 or lv==3 then//2级武器,3级衣服
+        if lv==2 or lv==3 or lv==4 then//2级武器,3级衣服
             set li[0]=0//初始化循环
             set li[1]=LoadInteger(udg_hs,22,ti)//读取强化书等级
             set li[2]=LoadInteger(udg_hs,ti,lv)//读取强化书对应武器类型
@@ -46,6 +46,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 if GetItemTypeId(UnitItemInSlot(u1,li[0]))==li[2]then//判断有无对应装备
                     set li[3]=GetItemTypeId(UnitItemInSlot(u1,li[0]))//读取对应装备
                     call RemoveSavedInteger(udg_hs,GetHandleId(UnitItemInSlot(u1,li[0])),GetItemLevel(UnitItemInSlot(u1,li[0])))//清除即将移除的物品绑定哈希表
+                    call RemoveSavedHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),GetItemLevel(UnitItemInSlot(u1,li[0])))//清除物品绑定玩家
                     call RemoveItem(UnitItemInSlot(u1,li[0]))//删除旧装备
                     set litem=CreateItem(LoadInteger(udg_hs,21,li[3]),GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()))//创建新装备
                     call UnitAddItem(u1,litem)//添加给单位
@@ -71,7 +72,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set li[0]=0
             loop
                 exitwhen li[0]==6
-                if GetItemLevel(UnitItemInSlot(u1,li[0]))==lv and UnitItemInSlot(u1,li[0])!=litem then//只能携带一件同类装备
+                if GetItemLevel(UnitItemInSlot(u1,li[0]))==lv and UnitItemInSlot(u1,li[0])!=litem and ITEM_TYPE_PERMANENT == GetItemType(UnitItemInSlot(u1,li[0])) then//只能携带一件同类装备
                     call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()),0,0,10,msg(1)+"你身上已有同类物品")
                     call UnitRemoveItem(u1,litem)
                     set litem=null
@@ -80,14 +81,14 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 endif
                 set li[0]=li[0]+1
             endloop
-            if lv<3 and LoadInteger(udg_hs,25,ti)<15 then//小于15级的武器和衣服才绑定
+            if (lv<3 and LoadInteger(udg_hs,25,ti)<16) or (lv==3 and LoadInteger(udg_hs,25,ti)<6 and LoadInteger(udg_hs,25,ti)>0 ) then//小于15级的武器和衣服才绑定
                 call SaveItemHandle(udg_hs,GetHandleId(GetOwningPlayer(u1)),lv,litem)//物品绑定玩家
             endif
         endif
     endif
 
 
-    if GetItemType(litem)==ITEM_TYPE_PURCHASABLE then
+    if GetItemType(litem)==ITEM_TYPE_PURCHASABLE then//判断是否材料，类型为可购买
         if lv==1 then
             set li[0]=GetItemLevel(UnitItemInSlot(u1,0))
             call RemoveItem(litem)
@@ -120,16 +121,17 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 set litem=LoadItemHandle(udg_hs,StringHash("材料"),0)//读取主线材料
                 set li[5]=GetItemTypeId(litem)//读取主线材料ID
                 set li[6]=LoadInteger(udg_hs,25,li[5])//读取升级对应的等级
-                set li[7]=(li[6]/5)*100//读取升级所需经验
+                set li[7]=((li[6]+4)/5)*100//读取升级所需经验
                 set li[8]=GetHandleId(litem)
                 set li[9]=GetItemLevel(litem)
-                set li[10]=LoadInteger(udg_hs,li[8],li[9])
+                set li[10]=LoadInteger(udg_hs,li[8],li[9])+1
                 set li[11]=0//判读是否具备升级条件
                 if GetItemType(litem)==ITEM_TYPE_PERMANENT  and li[6]<16 and ModuloInteger(li[6],5)==0 then
                     if  li[7]==li[10] then
                     else
                     call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()),0,0,"材料已齐全，装备经验不足")
                     set li[11]=1//拒绝升级
+                    call BJDebugMsg(I2S(li[7])+"   "+I2S(li[10]))
                     endif
                 endif
                 if li[11]==0 then
@@ -155,6 +157,19 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             endif
             call FlushChildHashtable(udg_hs,StringHash("材料"))//清空哈希表
         endif
+    endif
+
+    if GetItemType(litem)==ITEM_TYPE_CHARGED then//判断是否可充物品
+        set li[0]=0
+        loop
+            if GetItemTypeId(UnitItemInSlot(u1,li[0]))==GetItemTypeId(litem) and litem!=UnitItemInSlot(u1,li[0]) then
+                call SetItemCharges(UnitItemInSlot(u1,li[0]),GetItemCharges(UnitItemInSlot(u1,li[0]))+GetItemCharges(litem))//可充物品自动叠加
+                call RemoveItem(litem)//移除已叠加物品
+                set li[0]=5
+            endif
+            exitwhen li[0]==5
+            set li[0]=li[0]+1
+        endloop
     endif
 
     set litem=null

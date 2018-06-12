@@ -27,10 +27,12 @@ function xzyx1 takes nothing returns nothing
                 call SetUnitInvulnerable(GetTriggerUnit(),false)//取消无敌
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("获得物品触发")),GetTriggerUnit(),EVENT_UNIT_PICKUP_ITEM)//注册单位获得物品事件
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("丢弃物品触发")),GetTriggerUnit(),EVENT_UNIT_DROP_ITEM)//注册单位丢弃物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,99),GetTriggerUnit(),EVENT_UNIT_SPELL_EFFECT)//注册发动技能效果事件
                 set u1=CreateUnit(Player(15),'HB00',LoadReal(udg_hs,4,77),LoadReal(udg_hs,5,77),LoadReal(udg_hs,6,77))//创建菜单英雄
                 call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("菜单触发")),GetTriggerPlayer(),EVENT_PLAYER_UNIT_SELECTED,null)//再次注册选择单位触发
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("科技")),u1,EVENT_UNIT_RESEARCH_FINISH)//注册科技共享触发
                 call SetUnitOwner(u1,GetTriggerPlayer(),true)//改变单位所有者
+                call SuspendHeroXP(u1,true)//禁止菜单英雄获得经验
                 call SetUnitInvulnerable(u1,true)//设置无敌
                 call SetUnitFlyHeight(u1,10000,0)//设置飞行高度
                 if GetTriggerPlayer()==GetLocalPlayer() then//判断本地玩家，异步
@@ -41,6 +43,9 @@ function xzyx1 takes nothing returns nothing
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("宠物获得物品触发")),u1,EVENT_UNIT_PICKUP_ITEM)//注册单位获得物品事件
                 call SetUnitInvulnerable(u1,true)//设置无敌
                 set u1=null
+                if GetUnitTypeId(GetTriggerUnit())=='HA07' then//注册召唤事件
+                    call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,101),GetTriggerUnit(),EVENT_UNIT_SUMMON)
+                endif
                 if li2+1==LoadInteger(udg_hs,0,StringHash("游戏人数")) then//判断所有人都选了英雄
                     call DisableTrigger(GetTriggeringTrigger())//关闭触发
                     call DestroyTrigger(GetTriggeringTrigger())//删除触发

@@ -2,6 +2,10 @@ globals
 //globals from libbgj:
 constant boolean LIBRARY_libbgj=true
 //endglobals from libbgj
+//globals from libcf:
+constant boolean LIBRARY_libcf=true
+hashtable libcf__z_h=InitHashtable()
+//endglobals from libcf
 //globals from libchuguai:
 constant boolean LIBRARY_libchuguai=true
 //endglobals from libchuguai
@@ -44,6 +48,9 @@ constant boolean LIBRARY_liblist=true
 //globals from libselecthero:
 constant boolean LIBRARY_libselecthero=true
 //endglobals from libselecthero
+//globals from libskill:
+constant boolean LIBRARY_libskill=true
+//endglobals from libskill
 //globals from libyg:
 constant boolean LIBRARY_libyg=true
 //endglobals from libyg
@@ -74,7 +81,7 @@ constant boolean LIBRARY_csh=true
 integer i=0
 integer b=0
 integer g=0
-real jsqjg=5
+real jsqjg=20
 //endglobals from csh
     // User-defined
 hashtable udg_hs= null
@@ -129,6 +136,190 @@ function bgj takes nothing returns nothing
 endfunction
 
 //library libbgj ends
+//library libcf:
+function libcf__hy3 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
+    call SetUnitTimeScale(u, 0)
+    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
+    call DestroyTimer(GetExpiredTimer())
+    set u=null
+endfunction
+function libcf__hy2 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
+    local real sj=LoadReal(libcf__z_h, GetHandleId(GetExpiredTimer()), 1)
+    local timer t=CreateTimer()
+    call SetUnitTimeScale(u, 1)
+    call TimerStart(t, sj, false, function libcf__hy3)
+    call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
+    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
+    call DestroyTimer(GetExpiredTimer())
+    set u=null
+    set t=null
+endfunction
+function libcf__hy1 takes nothing returns nothing
+    local integer h=GetHandleId(GetExpiredTimer())
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local integer li=LoadInteger(libcf__z_h, h, 1)
+    if li == 20 then //20级的透明度
+        call RemoveUnit(u) //移除单位
+        call DestroyTimer(GetExpiredTimer()) //删除到期计时器
+        call FlushChildHashtable(libcf__z_h, h) //清理哈希表
+    else
+        set li=li + 1
+        call SetUnitVertexColor(u, 255, 255, 255, R2I(( 255 / 20 ) * li)) //设置透明度
+        call SaveInteger(libcf__z_h, h, 1, li) //保存当前透明度层次
+    endif
+    set u=null
+endfunction
+function libcf__cf_3 takes nothing returns nothing
+    local integer h=GetHandleId(GetExpiredTimer())
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local real ux=GetUnitX(u)
+    local real uy=GetUnitY(u)
+    local integer c=LoadInteger(libcf__z_h, h, 1)
+    local integer c1=LoadInteger(libcf__z_h, h, 2)
+local timer t=CreateTimer()
+    local integer h1=GetHandleId(t)
+    local real gd=GetUnitFlyHeight(u)
+    local real sj=LoadReal(libcf__z_h, h, 5)
+    if c1 < c then
+        set u=CreateUnit(GetOwningPlayer(u), 'o000', ux, uy, GetUnitFacing(u)) //创建幻影
+        call SetUnitFlyHeight(u, gd, 0) //设置幻影的高度
+        call SetUnitVertexColor(u, 255, 255, 255, 0) //设置幻影初始透明度
+        call UnitAddAbility(u, 'Arav') //添加风暴之鸦
+        call UnitRemoveAbility(u, 'Arav') //删除风暴之鸦
+        call SaveUnitHandle(libcf__z_h, h1, 0, u) //保存单位
+        call TimerStart(t, 0.04, true, function libcf__hy1)
+        call SetUnitAnimationByIndex(u, 3)
+        call SetUnitTimeScale(u, 10)
+        set t=CreateTimer()
+        call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
+        call SaveReal(libcf__z_h, GetHandleId(t), 1, sj)
+        call TimerStart(t, sj * 0.1 * c1, true, function libcf__hy2)
+        set c1=c1 + 1
+        call SaveInteger(libcf__z_h, h, 2, c1)
+    else
+        call FlushChildHashtable(libcf__z_h, h)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+    set u=null
+    set t=null
+endfunction
+function libcf__cf_1 takes nothing returns nothing
+    local integer h=GetHandleId(GetExpiredTimer())
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local real ux=GetUnitX(u)
+    local real uy=GetUnitY(u)
+    local real a=LoadReal(libcf__z_h, h, 1)
+    local real jl=LoadReal(libcf__z_h, h, 2)
+    local integer c=LoadInteger(libcf__z_h, h, 3)
+    local integer c1=LoadInteger(libcf__z_h, h, 4)
+local boolean ty=LoadBoolean(libcf__z_h, h, 7)
+    local real gd=LoadReal(libcf__z_h, h, 6)
+    //call BJDebugMsg(GetUnitName(u)+"    "+R2S(jl))
+    if c1 < c then
+        if IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_WALKABILITY) and false == IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
+        //X坐标停下来了
+        else
+            call SetUnitX(u, ux + jl * Cos(a))
+        endif
+        if IsTerrainPathable(ux, uy + jl * Sin(a), PATHING_TYPE_WALKABILITY) and false == IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
+        //Y坐标停下来了
+        else
+            call SetUnitY(u, uy + jl * Sin(a))
+        endif
+        if ty then
+            if c1 > c / 2 then //超过一半上升，未超过下降
+                call SetUnitFlyHeight(u, ( c - c1 ) * gd, 0)
+                call BJDebugMsg(GetUnitName(u) + "    " + I2S(c1))
+            else
+                call SetUnitFlyHeight(u, c1 * gd, 0)
+                call BJDebugMsg(GetUnitName(u) + "    " + I2S(c1))
+            endif
+        endif
+        set c1=c1 + 1
+        call SaveInteger(libcf__z_h, h, 4, c1)
+    else
+        call PauseUnit(u, false)
+        call DestroyTimer(GetExpiredTimer())
+        call FlushChildHashtable(libcf__z_h, h)
+    endif
+    set u=null
+endfunction
+function libcf_cf takes unit u,real x,real y,real s1,real s2,boolean yhy,boolean ty returns nothing
+//                          单位    目标X,Y     时间        间隔    有无幻影    跳跃
+    local timer t=CreateTimer()
+    local real ux=GetUnitX(u)
+    local real uy=GetUnitY(u)
+    local real jl=SquareRoot(( x - ux ) * ( x - ux ) + ( y - uy ) * ( y - uy ))
+    local real c=s1 / s2
+    local real xjl=jl / c
+    local integer h=GetHandleId(t)
+    call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
+    call SaveReal(libcf__z_h, h, 1, Atan2(y - uy, x - ux)) // 角度
+    call SaveReal(libcf__z_h, h, 2, xjl) //每次距离
+    call SaveInteger(libcf__z_h, h, 3, R2I(c)) //刷新次数
+    call TimerStart(t, s2, true, function libcf__cf_1) //冲锋
+    call SetUnitAnimationByIndex(u, 3)
+    call BJDebugMsg(R2S(xjl) + R2S(jl))
+    if ty then
+        call UnitAddAbility(u, 'Arav')
+        call UnitRemoveAbility(u, 'Arav')
+        call SaveBoolean(libcf__z_h, h, 7, ty)
+        call SaveReal(libcf__z_h, h, 6, 400 / c) //每次跳跃高度
+    endif
+    
+    if yhy then
+        call PauseUnit(u, true)
+        set t=CreateTimer()
+        set h=GetHandleId(t)
+        call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
+        call SaveInteger(libcf__z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
+        call TimerStart(t, 0.04, true, function libcf__cf_3)
+        call SaveReal(libcf__z_h, h, 5, s2)
+    endif
+    set t=null
+endfunction
+function libcf_cf1 takes unit u1,unit u2 returns nothing
+    local real u1x=GetUnitX(u1)
+    local real u1y=GetUnitY(u1)
+    local real u2x=GetUnitX(u2)
+    local real u2y=GetUnitY(u2)
+    local real jl=800 - SquareRoot(( u1x - u2x ) * ( u1x - u2x ) + ( u1y - u2y ) * ( u1y - u2y ))
+    local real a=Atan2(u1y - u2y, u1x - u2x)
+    local real s=jl / 400
+    local real c=s / 0.04
+    local real xjl=jl / c
+    local timer t=CreateTimer()
+    local integer h=GetHandleId(t)
+    call SaveUnitHandle(libcf__z_h, h, 0, u1)
+    call SaveReal(libcf__z_h, h, 1, a)
+    call SaveReal(libcf__z_h, h, 2, xjl)
+    call SaveInteger(libcf__z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf__cf_1)
+    set t=null
+endfunction
+function libcf_cf2 takes unit u1,unit u2 returns nothing
+    local real u1x=GetUnitX(u1)
+    local real u1y=GetUnitY(u1)
+    local real u2x=GetUnitX(u2)
+    local real u2y=GetUnitY(u2)
+    local real jl=SquareRoot(( u1x - u2x ) * ( u1x - u2x ) + ( u1y - u2y ) * ( u1y - u2y ))
+    local real a=Atan2(u2y - u1y, u2x - u1x)
+    local real s=jl / 800
+    local real c=s / 0.04
+    local real xjl=jl / c
+    local timer t=CreateTimer()
+    local integer h=GetHandleId(t)
+    call SaveUnitHandle(libcf__z_h, h, 0, u1)
+    call SaveReal(libcf__z_h, h, 1, a)
+    call SaveReal(libcf__z_h, h, 2, xjl)
+    call SaveInteger(libcf__z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf__cf_1)
+    set t=null
+endfunction
+
+//library libcf ends
 //library libchuguai:
 function zzbs takes nothing returns nothing
     local unit u=CreateUnit(Player(11), LoadInteger(udg_hs, 13, 6), LoadReal(udg_hs, 1, 77), LoadReal(udg_hs, 2, 77), LoadReal(udg_hs, 3, 77))
@@ -151,7 +342,7 @@ function chuguai_1 takes nothing returns nothing
     //出怪计时器循环
     if b < 35 then
         set b=b + 1
-        set g=3 //出怪数量
+        set g=19 //出怪数量
         if ModuloInteger(b, 7) == 0 then
             call cboss()
         endif
@@ -186,14 +377,14 @@ function death_1 takes nothing returns nothing
         set li[10]=LoadInteger(udg_hs, li[9], GetItemLevel(it)) + 1 //读取经验和经验+1
         set li[11]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
         set li[12]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
-        set li[13]=( li[11] + 5 ) / 5 //设置升级所需经验
+        set li[13]=( li[11] + 4 ) / 5 //设置升级所需经验
         if li[10] == li[13] * 100 then //判断升级经验是否足够
-            if ModuloInteger(li[11], 5) != 5 then //判断是否需要材料
+            if ModuloInteger(li[11], 5) != 0 then //判断是否需要材料
                 call UnitAddItem(u1, CreateItem(li[12], GetUnitX(u1), GetUnitY(u1))) //给予强化石
             endif
         else //经验不足
             call SaveInteger(udg_hs, li[9], GetItemLevel(it), li[10]) //记录经验
-            call BJDebugMsg(I2S(li[10]))
+            //此处应显示经验给玩家
         endif
     endif
     if HaveSavedHandle(udg_hs, li[1], 2) then //检测是否绑定有物品
@@ -202,13 +393,30 @@ function death_1 takes nothing returns nothing
         set li[20]=LoadInteger(udg_hs, li[19], GetItemLevel(it)) + 1 //读取经验和经验+1
         set li[21]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
         set li[22]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
-        set li[23]=( li[21] + 5 ) / 5 //设置升级所需经验
+        set li[23]=( li[21] + 4 ) / 5 //设置升级所需经验
         if li[20] == li[23] * 100 then //判断升级经验是否足够
-            if ModuloInteger(li[21], 5) != 5 then //判断是否需要材料
+            if ModuloInteger(li[21], 5) != 0 then //判断是否需要材料
                 call UnitAddItem(u1, CreateItem(li[22], GetUnitX(u1), GetUnitY(u1))) //给予强化石
             endif
         else //经验不足
             call SaveInteger(udg_hs, li[19], GetItemLevel(it), li[20]) //记录经验
+        endif
+        call BJDebugMsg(I2S(li[20]) + "衣服" + I2S(li[23] * 100))
+    endif
+    if HaveSavedHandle(udg_hs, li[1], 3) then //检测是否绑定有物品
+        set it=LoadItemHandle(udg_hs, li[1], 3) //读取绑定的物品
+        set li[29]=GetHandleId(it) //读取绑定物品的handle
+        set li[30]=LoadInteger(udg_hs, li[29], GetItemLevel(it)) + 1 //读取经验和经验+1
+        set li[31]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
+        set li[32]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
+        set li[33]=li[31] //设置升级所需经验
+        if li[30] == li[33] * 100 then //判断升级经验是否足够
+            if ModuloInteger(li[31], 5) != 0 then //判断是否需要材料
+                call UnitAddItem(u1, CreateItem(li[32], GetUnitX(u1), GetUnitY(u1))) //给予强化石
+            endif
+        else //经验不足
+            call SaveInteger(udg_hs, li[29], GetItemLevel(it), li[30]) //记录经验
+            call BJDebugMsg(I2S(li[30]) + "手套" + I2S(li[33] * 100))
         endif
     endif
     set it=null
@@ -462,6 +670,7 @@ function playcd_1 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -521,6 +730,7 @@ function playcd_2 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -580,6 +790,7 @@ function playcd_3 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -639,6 +850,7 @@ function playcd_4 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -698,6 +910,7 @@ function playcd_5 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -757,6 +970,7 @@ function playcd_6 takes nothing returns nothing
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
+            call SuspendHeroXP(u1, true) //禁止回城英雄获得经验
             if GetLocalPlayer() == p1 then
                 call SetUnitFlyHeight(u1, 0, 0) //异步高度
             endif
@@ -908,7 +1122,7 @@ function getitem_1 takes nothing returns nothing
             set litem=null
             return //退出
         endif
-        if lv == 2 or lv == 3 then //2级武器,3级衣服
+        if lv == 2 or lv == 3 or lv == 4 then //2级武器,3级衣服
             set li[0]=0 //初始化循环
             set li[1]=LoadInteger(udg_hs, 22, ti) //读取强化书等级
             set li[2]=LoadInteger(udg_hs, ti, lv) //读取强化书对应武器类型
@@ -917,6 +1131,7 @@ function getitem_1 takes nothing returns nothing
                 if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[2] then //判断有无对应装备
                     set li[3]=GetItemTypeId(UnitItemInSlot(u1, li[0])) //读取对应装备
                     call RemoveSavedInteger(udg_hs, GetHandleId(UnitItemInSlot(u1, li[0])), GetItemLevel(UnitItemInSlot(u1, li[0]))) //清除即将移除的物品绑定哈希表
+                    call RemoveSavedHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), GetItemLevel(UnitItemInSlot(u1, li[0]))) //清除物品绑定玩家
                     call RemoveItem(UnitItemInSlot(u1, li[0])) //删除旧装备
                     set litem=CreateItem(LoadInteger(udg_hs, 21, li[3]), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit())) //创建新装备
                     call UnitAddItem(u1, litem) //添加给单位
@@ -941,7 +1156,7 @@ function getitem_1 takes nothing returns nothing
             set li[0]=0
             loop
                 exitwhen li[0] == 6
-                if GetItemLevel(UnitItemInSlot(u1, li[0])) == lv and UnitItemInSlot(u1, li[0]) != litem then //只能携带一件同类装备
+                if GetItemLevel(UnitItemInSlot(u1, li[0])) == lv and UnitItemInSlot(u1, li[0]) != litem and ITEM_TYPE_PERMANENT == GetItemType(UnitItemInSlot(u1, li[0])) then //只能携带一件同类装备
                     call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "你身上已有同类物品")
                     call UnitRemoveItem(u1, litem)
                     set litem=null
@@ -950,12 +1165,12 @@ function getitem_1 takes nothing returns nothing
                 endif
                 set li[0]=li[0] + 1
             endloop
-            if lv < 3 and LoadInteger(udg_hs, 25, ti) < 15 then //小于15级的武器和衣服才绑定
+            if ( lv < 3 and LoadInteger(udg_hs, 25, ti) < 16 ) or ( lv == 3 and LoadInteger(udg_hs, 25, ti) < 6 and LoadInteger(udg_hs, 25, ti) > 0 ) then //小于15级的武器和衣服才绑定
                 call SaveItemHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), lv, litem) //物品绑定玩家
             endif
         endif
     endif
-    if GetItemType(litem) == ITEM_TYPE_PURCHASABLE then
+    if GetItemType(litem) == ITEM_TYPE_PURCHASABLE then //判断是否材料，类型为可购买
         if lv == 1 then
             set li[0]=GetItemLevel(UnitItemInSlot(u1, 0))
             call RemoveItem(litem)
@@ -988,16 +1203,17 @@ function getitem_1 takes nothing returns nothing
                 set litem=LoadItemHandle(udg_hs, StringHash("材料"), 0) //读取主线材料
                 set li[5]=GetItemTypeId(litem) //读取主线材料ID
                 set li[6]=LoadInteger(udg_hs, 25, li[5]) //读取升级对应的等级
-                set li[7]=( li[6] / 5 ) * 100 //读取升级所需经验
+                set li[7]=( ( li[6] + 4 ) / 5 ) * 100 //读取升级所需经验
                 set li[8]=GetHandleId(litem)
                 set li[9]=GetItemLevel(litem)
-                set li[10]=LoadInteger(udg_hs, li[8], li[9])
+                set li[10]=LoadInteger(udg_hs, li[8], li[9]) + 1
                 set li[11]=0 //判读是否具备升级条件
                 if GetItemType(litem) == ITEM_TYPE_PERMANENT and li[6] < 16 and ModuloInteger(li[6], 5) == 0 then
                     if li[7] == li[10] then
                     else
                     call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "材料已齐全，装备经验不足")
                     set li[11]=1 //拒绝升级
+                    call BJDebugMsg(I2S(li[7]) + "   " + I2S(li[10]))
                     endif
                 endif
                 if li[11] == 0 then
@@ -1022,6 +1238,18 @@ function getitem_1 takes nothing returns nothing
             endif
             call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
         endif
+    endif
+    if GetItemType(litem) == ITEM_TYPE_CHARGED then //判断是否可充物品
+        set li[0]=0
+        loop
+            if GetItemTypeId(UnitItemInSlot(u1, li[0])) == GetItemTypeId(litem) and litem != UnitItemInSlot(u1, li[0]) then
+                call SetItemCharges(UnitItemInSlot(u1, li[0]), GetItemCharges(UnitItemInSlot(u1, li[0])) + GetItemCharges(litem)) //可充物品自动叠加
+                call RemoveItem(litem) //移除已叠加物品
+                set li[0]=5
+            endif
+            exitwhen li[0] == 5
+            set li[0]=li[0] + 1
+        endloop
     endif
     set litem=null
     set u1=null
@@ -1056,10 +1284,13 @@ function input_1 takes nothing returns nothing
     if s2 == "hg" then //判断输入
         call hg(LoadUnitHandle(udg_hs, H2I(p1), StringHash("英雄"))) //调用回城函数
     endif
-    call SetPlayerAbilityAvailable(p1, tempi, true) //测试添加技能
-    call SetPlayerAbilityAvailable(p1, 1093677105, false)
-    call SetPlayerAbilityAvailable(p1, 1093677105, true)
-    call BJDebugMsg(GetObjectName(tempi))
+    //call SetPlayerAbilityAvailable(p1,tempi,true)//测试添加技能
+    //call SetPlayerAbilityAvailable(p1,1093677105,false)
+    //call SetPlayerAbilityAvailable(p1,1093677105,true)
+    //call BJDebugMsg(GetObjectName(tempi))
+    if s2 == "1" then
+        call IncUnitAbilityLevel(LoadUnitHandle(udg_hs, H2I(p1), StringHash("英雄")), 'A00T')
+    endif
 endfunction
 function input takes nothing returns nothing
     local trigger tr
@@ -1143,10 +1374,12 @@ function xzyx1 takes nothing returns nothing
                 call SetUnitInvulnerable(GetTriggerUnit(), false) //取消无敌
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("获得物品触发")), GetTriggerUnit(), EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("丢弃物品触发")), GetTriggerUnit(), EVENT_UNIT_DROP_ITEM) //注册单位丢弃物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 99), GetTriggerUnit(), EVENT_UNIT_SPELL_EFFECT) //注册发动技能效果事件
                 set u1=CreateUnit(Player(15), 'HB00', LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77), LoadReal(udg_hs, 6, 77)) //创建菜单英雄
                 call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("菜单触发")), GetTriggerPlayer(), EVENT_PLAYER_UNIT_SELECTED, null) //再次注册选择单位触发
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("科技")), u1, EVENT_UNIT_RESEARCH_FINISH) //注册科技共享触发
                 call SetUnitOwner(u1, GetTriggerPlayer(), true) //改变单位所有者
+                call SuspendHeroXP(u1, true) //禁止菜单英雄获得经验
                 call SetUnitInvulnerable(u1, true) //设置无敌
                 call SetUnitFlyHeight(u1, 10000, 0) //设置飞行高度
                 if GetTriggerPlayer() == GetLocalPlayer() then //判断本地玩家，异步
@@ -1157,6 +1390,9 @@ function xzyx1 takes nothing returns nothing
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("宠物获得物品触发")), u1, EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
                 call SetUnitInvulnerable(u1, true) //设置无敌
                 set u1=null
+                if GetUnitTypeId(GetTriggerUnit()) == 'HA07' then //注册召唤事件
+                    call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 101), GetTriggerUnit(), EVENT_UNIT_SUMMON)
+                endif
                 if li2 + 1 == LoadInteger(udg_hs, 0, StringHash("游戏人数")) then //判断所有人都选了英雄
                     call DisableTrigger(GetTriggeringTrigger()) //关闭触发
                     call DestroyTrigger(GetTriggeringTrigger()) //删除触发
@@ -1198,6 +1434,223 @@ function xzyx takes nothing returns nothing
 endfunction
 
 //library libselecthero ends
+//library libskill:
+function skill_1 takes nothing returns nothing
+    local unit u=GetTriggerUnit()
+    local integer bl=GetHeroStr(u, false)
+    local integer bm=GetHeroAgi(u, false)
+    local integer bz=GetHeroInt(u, false)
+    local integer ql=GetHeroStr(u, true)
+    local integer qm=GetHeroAgi(u, true)
+    local integer qz=GetHeroInt(u, true)
+    local player p1=GetOwningPlayer(u)
+    local integer ll=ql - bl
+    local integer lm=qm - bm
+    local integer lz=qz - bz
+    local integer array li
+    local group l__g
+    local unit u1
+    local unit u2
+    local unit u3
+    local real x
+    local real y
+    local real array f
+    local real s
+    set s=ql + qm + qz
+    if GetSpellAbilityId() == 'A00I' then //骑士之志
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A00K' then //雷神领域
+        set u1=GetSpellTargetUnit()
+        set l__g=CreateGroup()
+        set x=GetUnitX(u1)
+        set y=GetUnitY(u1)
+        set u3=CreateUnit(p1, 'n000', GetUnitX(u), GetUnitY(u), 0) //创建马甲
+        call UnitAddAbility(u3, 'A01J') //添加技能
+        call UnitApplyTimedLife(u3, 'BHwe', 1) //设置生命周期
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call IssueNeutralTargetOrderById(p1, u3, 852095, u2) //扔锤子
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A00M' then //野蛮冲撞
+        set x=GetUnitX(GetSpellTargetUnit())
+        set y=GetUnitY(GetSpellTargetUnit())
+        call libcf_cf(u , x , y , 0.4 , 0.02 , false , false)
+        set l__g=CreateGroup()
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    //无影手技能在此
+    //破甲阵的触发就省下了
+    if GetSpellAbilityId() == 'A00V' then //绝对陷阱
+        set u1=GetSpellTargetUnit()
+        set l__g=CreateGroup()
+        set x=GetUnitX(u1)
+        set y=GetUnitY(u1)
+        set u3=CreateUnit(p1, 'n000', GetUnitX(u), GetUnitY(u), 0) //创建马甲
+        call UnitAddAbility(u3, 'A01P') //添加技能
+        call UnitApplyTimedLife(u3, 'BHwe', 1) //设置生命周期
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call IssueNeutralTargetOrderById(p1, u3, 852106, u2) //扔网
+                    if IsUnitType(u2, UNIT_TYPE_HERO) then
+                        call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                    else
+                        if GetRandomInt(1, 100) < 8 then
+                            call SetUnitOwner(u2, p1, true)
+                            call UnitApplyTimedLife(u2, 'BHwe', 120)
+                        else
+                            call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                        endif
+                    endif
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A00Y' then //斗者怒吼
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        set u3=CreateUnit(p1, 'n000', GetUnitX(u), GetUnitY(u), 0) //创建马甲
+        call UnitAddAbility(u3, 'A01Q') //添加技能
+        call UnitApplyTimedLife(u3, 'BHwe', 1) //设置生命周期
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and false == IsUnitOwnedByPlayer(u2, Player(11)) then //选队友
+                    call IssueNeutralTargetOrderById(p1, u3, 852101, u2) //放嗜血术
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A010' then //削铁如泥
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A011' then
+        set f[0]=GetUnitFacing(u)
+        set f[1]=GetUnitX(u)
+        set f[2]=GetUnitY(u)
+        set li[0]=- 4
+        loop
+            set x=GetUnitX(u) + 600 * Cos(( f[0] + 15 * li[0] ) * 3.14159 / 180)
+            set y=GetUnitY(u) + 600 * Sin(( f[0] + 15 * li[0] ) * 3.14159 / 180)
+            set u1=CreateUnit(p1, 'n003', f[1], f[2], f[0] + 15 * li[0])
+            call AddSpecialEffectTarget("Abilities\\Spells\\Other\\BlackArrow\\BlackArrowMissile.mdl", u1, "sprite")
+            call UnitApplyTimedLife(u1, 'BHwe', 0.5)
+            call libcf_cf(u1 , x , y , 0.5 , 0.025 , false , false)
+            call BJDebugMsg(R2S(f[1]) + "  " + R2S(f[2]) + "  " + R2S(x) + "  " + R2S(y))
+            exitwhen li[0] == 4
+            set li[0]=li[0] + 1
+        endloop
+    endif
+    set l__g=null
+    set u=null
+    set u1=null
+    set u2=null
+    set u3=null
+    set p1=null
+endfunction
+function skill_jzxj_1 takes nothing returns nothing
+    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
+    local integer bl=GetHeroStr(u, false)
+    local integer bm=GetHeroAgi(u, false)
+    local integer bz=GetHeroInt(u, false)
+    local integer ql=GetHeroStr(u, true)
+    local integer qm=GetHeroAgi(u, true)
+    local integer qz=GetHeroInt(u, true)
+    local player p1=GetOwningPlayer(u)
+    local integer ll=ql - bl
+    local integer lm=qm - bm
+    local integer lz=qz - bz
+    local group l__g=CreateGroup()
+    local unit u2
+    local real x=GetUnitX(GetTriggerUnit())
+    local real y=GetUnitY(GetTriggerUnit())
+    local real s
+    set s=ql + qm + qz
+    call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+    loop
+        set u2=FirstOfGroup(l__g)
+        exitwhen u2 == null
+            if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2)))
+                call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+            endif
+            call GroupRemoveUnit(l__g, u2)
+    endloop
+    call DestroyGroup(l__g)
+    call DestroyTrigger(GetTriggeringTrigger())
+    set l__g=null
+    set u=null
+    set u2=null
+    set p1=null
+endfunction
+function skill_jzxj takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    call TriggerAddAction(tr, function skill_jzxj_1)
+    call TriggerRegisterUnitEvent(tr, GetSummonedUnit(), EVENT_UNIT_DEATH)
+    set tr=null
+endfunction
+function skill takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    call TriggerAddAction(tr, function skill_1)
+    call SaveTriggerHandle(udg_hs, 0, 99, tr)
+    set tr=CreateTrigger()
+    call TriggerAddAction(tr, function skill_jzxj)
+    call SaveTriggerHandle(udg_hs, 0, 101, tr)
+    set tr=null
+endfunction
+
+//library libskill ends
 //library libyg:
 function bossfh takes nothing returns nothing
     local integer li=LoadInteger(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("复活boss"))
@@ -1217,6 +1670,11 @@ endfunction
 function yg takes nothing returns nothing
     local timer t=CreateTimer()
     local trigger tr=CreateTrigger()
+    local integer li
+    if HaveSavedInteger(udg_hs, GetUnitTypeId(GetTriggerUnit()), 1000) then
+        set li=LoadInteger(udg_hs, GetUnitTypeId(GetTriggerUnit()), 1000)
+        call CreateItem(LoadInteger(udg_hs, GetUnitTypeId(GetTriggerUnit()), GetRandomInt(1, li)), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit()))
+    endif
     call TriggerAddAction(tr, function yg) //新触发添加动作
     call DestroyTrigger(GetTriggeringTrigger()) //删除触发触发
     call SaveInteger(udg_hs, GetHandleId(t), StringHash("复活boss"), GetUnitTypeId(GetTriggerUnit())) //保存死亡的类型
@@ -1335,8 +1793,6 @@ endfunction
         endif
         call SaveBoolean(udg_hs, id[id[0] - 5], 10, bo) //属于强化
         exitwhen id[id[0]] == 0
-        
-        
     endloop
     endfunction
     function LUAcreateunit takes nothing returns nothing
@@ -2512,6 +2968,65 @@ endfunction
     call TriggerAddAction(ttt, function yg)
     call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
     
+    //暗夜洞穴
+    call SaveInteger(udg_hs, 'UB00', 1, 'IB3Y')
+    call SaveInteger(udg_hs, 'UB00', 2, 'IB3Z')
+    call SaveInteger(udg_hs, 'UB00', 3, 'IB43')
+    call SaveInteger(udg_hs, 'UB00', 1000, 3)
+    //蛇龙之巢
+    call SaveInteger(udg_hs, 'UB01', 1, 'IB40')
+    call SaveInteger(udg_hs, 'UB01', 2, 'IB41')
+    call SaveInteger(udg_hs, 'UB01', 3, 'IB42')
+    call SaveInteger(udg_hs, 'UB01', 1000, 3)
+    //雪域宫
+    call SaveInteger(udg_hs, 'UB02', 1, 'IB39')
+    call SaveInteger(udg_hs, 'UB02', 2, 'IB3A')
+    call SaveInteger(udg_hs, 'UB02', 1000, 2)
+    //熔岩穴
+    call SaveInteger(udg_hs, 'UB03', 1, 'IB3Q')
+    call SaveInteger(udg_hs, 'UB03', 1000, 1)
+    call SaveInteger(udg_hs, 'UB04', 1, 'IB3R')
+    call SaveInteger(udg_hs, 'UB04', 1000, 1)
+    call SaveInteger(udg_hs, 'UB05', 1, 'IB3S')
+    call SaveInteger(udg_hs, 'UB05', 1000, 1)
+    call SaveInteger(udg_hs, 'UB06', 1, 'IB3T')
+    call SaveInteger(udg_hs, 'UB06', 1000, 1)
+    //圣兽岛
+    call SaveInteger(udg_hs, 'UB07', 1, 'IB2K')
+    call SaveInteger(udg_hs, 'UB07', 1000, 1)
+    call SaveInteger(udg_hs, 'UB08', 1, 'IB2M')
+    call SaveInteger(udg_hs, 'UB08', 1000, 1)
+    call SaveInteger(udg_hs, 'UB09', 1, 'IB2N')
+    call SaveInteger(udg_hs, 'UB09', 1000, 1)
+    call SaveInteger(udg_hs, 'UB0A', 1, 'IB2L')
+    call SaveInteger(udg_hs, 'UB0A', 1000, 1)
+    //斗者结晶的？？
+    //龙渊泽
+    call SaveInteger(udg_hs, 'UB0C', 1, 'IB3D')
+    call SaveInteger(udg_hs, 'UB0C', 2, 'IB3H')
+    call SaveInteger(udg_hs, 'UB0C', 1000, 2)
+    call SaveInteger(udg_hs, 'UB0D', 1, 'IB3E')
+    call SaveInteger(udg_hs, 'UB0D', 2, 'IB3I')
+    call SaveInteger(udg_hs, 'UB0D', 1000, 2)
+    call SaveInteger(udg_hs, 'UB0E', 1, 'IB3F')
+    call SaveInteger(udg_hs, 'UB0E', 2, 'IB3J')
+    call SaveInteger(udg_hs, 'UB0E', 1000, 2)
+    call SaveInteger(udg_hs, 'UB0F', 1, 'IB3G')
+    call SaveInteger(udg_hs, 'UB0F', 2, 'IB3K')
+    call SaveInteger(udg_hs, 'UB0F', 1000, 2)
+    //圣兽魂谷
+    call SaveInteger(udg_hs, 'UB0G', 1, 'IB3M')
+    call SaveInteger(udg_hs, 'UB0G', 1000, 1)
+    call SaveInteger(udg_hs, 'UB0H', 1, 'IB3O')
+    call SaveInteger(udg_hs, 'UB0H', 1000, 1)
+    call SaveInteger(udg_hs, 'UB0I', 1, 'IB3P')
+    call SaveInteger(udg_hs, 'UB0I', 1000, 1)
+    call SaveInteger(udg_hs, 'UB0J', 1, 'IB3N')
+    call SaveInteger(udg_hs, 'UB0J', 1000, 1)
+    //怒焰谷
+    call SaveInteger(udg_hs, 'UB0K', 1, 'IB0Z')
+    call SaveInteger(udg_hs, 'UB0K', 1000, 1)
+    
     set unitt=CreateUnit(Player(11), 'UB0R', - 9344, - 896, 0)
     
             set ttt=CreateTrigger()
@@ -3661,6 +4176,30 @@ endfunction
     call SaveInteger(udg_hs, 25, 'IB2A', 34) //存储装备等级
     call SaveInteger(udg_hs, 'IB2A', 2, 'IC1V') //存储装备对应物品
     
+    call SaveInteger(udg_hs, 22, 'IC1W', 1)
+    call SaveInteger(udg_hs, 21, 'IB0Z', 'IB10')
+    call SaveInteger(udg_hs, 'IC1W', 4, 'IB0Z')
+    call SaveInteger(udg_hs, 25, 'IB0Z', 1) //存储装备等级
+    call SaveInteger(udg_hs, 'IB0Z', 2, 'IC1W') //存储装备对应物品
+    
+    call SaveInteger(udg_hs, 22, 'IC1X', 2)
+    call SaveInteger(udg_hs, 21, 'IB10', 'IB11')
+    call SaveInteger(udg_hs, 'IC1X', 4, 'IB10')
+    call SaveInteger(udg_hs, 25, 'IB10', 2) //存储装备等级
+    call SaveInteger(udg_hs, 'IB10', 2, 'IC1X') //存储装备对应物品
+    
+    call SaveInteger(udg_hs, 22, 'IC1Y', 3)
+    call SaveInteger(udg_hs, 21, 'IB11', 'IB12')
+    call SaveInteger(udg_hs, 'IC1Y', 4, 'IB11')
+    call SaveInteger(udg_hs, 25, 'IB11', 3) //存储装备等级
+    call SaveInteger(udg_hs, 'IB11', 2, 'IC1Y') //存储装备对应物品
+    
+    call SaveInteger(udg_hs, 22, 'IC1Z', 4)
+    call SaveInteger(udg_hs, 21, 'IB12', 'IB13')
+    call SaveInteger(udg_hs, 'IC1Z', 4, 'IB12')
+    call SaveInteger(udg_hs, 25, 'IB12', 4) //存储装备等级
+    call SaveInteger(udg_hs, 'IB12', 2, 'IC1Z') //存储装备对应物品
+    
     call SetMusicVolume(PercentToInt(50, 127))
     //新手装备初始化
     call SaveInteger(udg_hs, 'IB3U', 1, 'IC00')
@@ -3677,7 +4216,7 @@ endfunction
     
     set ttt=null
     endfunction 
-    function csh___init takes nothing returns nothing
+    function csh__init takes nothing returns nothing
         call LUAcreateunit() //lua初始化，内容在上面
         call input() //输入触发
         call xzyx() //选择英雄初始化
@@ -3691,6 +4230,7 @@ endfunction
         call kj() //注册科技同步
         call bgj() //注册被攻击事件
         call death() //注册死亡事件
+        call skill() //注册发动技能效果事件
     endfunction
 
 //library csh ends
@@ -3700,7 +4240,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Sun Jun 10 10:36:44 2018
+//   Date: Tue Jun 12 14:49:48 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================
@@ -3718,6 +4258,7 @@ endfunction
 //***************************************************************************
 function CreateAllItems takes nothing returns nothing
     local integer itemID
+    call CreateItem('IB0Z', 433.3, - 4900.9)
     call CreateItem('IB1R', 1098.7, - 4703.1)
     call CreateItem('IB3D', 1086.0, - 4790.4)
     call CreateItem('IB3E', 1082.4, - 4871.3)
@@ -3813,7 +4354,7 @@ function main takes nothing returns nothing
     call CreateAllItems()
     call InitBlizzard()
 
-call ExecuteFunc("csh___init")
+call ExecuteFunc("csh__init")
 
     call InitGlobals()
 endfunction

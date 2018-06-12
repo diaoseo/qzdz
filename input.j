@@ -11,10 +11,14 @@ function input_1 takes nothing returns nothing
         call hg(LoadUnitHandle(udg_hs,H2I(p1),StringHash("英雄")))//调用回城函数
     endif
 
-    call SetPlayerAbilityAvailable(p1,tempi,true)//测试添加技能
-    call SetPlayerAbilityAvailable(p1,1093677105,false)
-    call SetPlayerAbilityAvailable(p1,1093677105,true)
-    call BJDebugMsg(GetObjectName(tempi))
+    //call SetPlayerAbilityAvailable(p1,tempi,true)//测试添加技能
+    //call SetPlayerAbilityAvailable(p1,1093677105,false)
+    //call SetPlayerAbilityAvailable(p1,1093677105,true)
+    //call BJDebugMsg(GetObjectName(tempi))
+    if s2=="1" then
+        call IncUnitAbilityLevel(LoadUnitHandle(udg_hs,H2I(p1),StringHash("英雄")),'A00T')
+    endif
+
 endfunction
 
 function input takes nothing returns nothing

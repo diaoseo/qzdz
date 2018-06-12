@@ -35,6 +35,7 @@ function playcd_<?=tostring(x)?> takes nothing returns nothing//各个玩家的�
             call SetUnitOwner(u1,p1,true)//改变单位所属
             call SetUnitInvulnerable(u1,true)//设置无敌
             call SetUnitFlyHeight(u1,10000,0)//设置高度
+            call SuspendHeroXP(u1,true)//禁止回城英雄获得经验
             if GetLocalPlayer()==p1 then
                 call SetUnitFlyHeight(u1,0,0)//异步高度
             endif

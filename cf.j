@@ -91,26 +91,29 @@ private function cf_1 takes nothing returns nothing//有碰撞
     local integer c1=LoadInteger(z_h,h,4) //已刷新次数
     local boolean ty=LoadBoolean(z_h,h,7)//是否跳跃
     local real gd=LoadReal(z_h,h,6)
+    //call BJDebugMsg(GetUnitName(u)+"    "+R2S(jl))
     if c1<c then
-        if IsTerrainPathable(ux+jl*Cos(a),uy,PATHING_TYPE_BUILDABILITY) then
+        if IsTerrainPathable(ux+jl*Cos(a),uy,PATHING_TYPE_WALKABILITY) and false== IsTerrainPathable(ux+jl*Cos(a),uy,PATHING_TYPE_BUILDABILITY) then
         //X坐标停下来了
         else
             call SetUnitX(u,ux+jl*Cos(a))
         endif
 
-        if IsTerrainPathable(ux,uy+jl*Sin(a),PATHING_TYPE_BUILDABILITY) then
+        if IsTerrainPathable(ux,uy+jl*Sin(a),PATHING_TYPE_WALKABILITY) and false== IsTerrainPathable(ux+jl*Cos(a),uy,PATHING_TYPE_BUILDABILITY)then
         //Y坐标停下来了
         else
             call SetUnitY(u,uy+jl*Sin(a))
         endif
-
-        if c1>c/2 then//超过一半上升，未超过下降
-            call SetUnitFlyHeight(u,(c-c1)*gd,0)
-        else
-            call SetUnitFlyHeight(u,c1*gd,0)
+        if ty then
+            if c1>c/2 then//超过一半上升，未超过下降
+                call SetUnitFlyHeight(u,(c-c1)*gd,0)
+                call BJDebugMsg(GetUnitName(u)+"    "+I2S(c1))
+            else
+                call SetUnitFlyHeight(u,c1*gd,0)
+                call BJDebugMsg(GetUnitName(u)+"    "+I2S(c1))
+            endif
         endif
         set c1=c1+1
-
         call SaveInteger(z_h,h,4,c1)
     else
         call PauseUnit(u,false)
@@ -134,18 +137,18 @@ public function cf takes unit u,real x,real y,real s1, real s2,boolean yhy,boole
     call SaveReal(z_h,h,2,xjl)//每次距离
     call SaveInteger(z_h,h,3,R2I(c))//刷新次数
     call TimerStart(t,s2,true,function cf_1)//冲锋
-    call PauseUnit(u,true)
     call SetUnitAnimationByIndex(u,3)
-    
+    call BJDebugMsg(R2S(xjl)+R2S(jl))
     if ty then
         call UnitAddAbility(u,'Arav')
         call UnitRemoveAbility(u,'Arav')
         call SaveBoolean(z_h,h,7,ty)
         call SaveReal(z_h,h,6,400/c)//每次跳跃高度
+
     endif
-    
 
     if yhy then
+        call PauseUnit(u,true)
         set t= CreateTimer()
         set h=GetHandleId(t)
         call SaveUnitHandle(z_h,h,0,u)//单位
@@ -196,22 +199,6 @@ public function cf2 takes unit u1,unit u2 returns nothing//原地聚拢
     call TimerStart(t,0.04,true,function cf_1)
     set t=null
 endfunction
-
-
-function xqdw takes nothing returns nothing//选取圆范围单位
-    local group g=CreateGroup()
-    local unit u
-    call GroupEnumUnitsInRange(g,0,0,0,null)
-    loop
-        set u=FirstOfGroup(g)
-        exitwhen u==null
-        call GroupRemoveUnit(g,u)
-    endloop
-    call DestroyGroup(g)
-    set g=null
-    set u=null
-endfunction
-
 
 endlibrary
 

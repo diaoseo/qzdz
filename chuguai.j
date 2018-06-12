@@ -25,7 +25,7 @@ function chuguai_1 takes nothing returns nothing
     //出怪计时器循环
     if b<35 then
         set b=b+1
-        set g=3//出怪数量
+        set g=19//出怪数量
         if ModuloInteger(b,7)==0 then
             call cboss() 
         endif
