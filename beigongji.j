@@ -19,6 +19,7 @@ function bgj_1 takes nothing returns nothing
     local real x=GetUnitX(u1)
     local real y=GetUnitY(u1)
     local real s//伤害
+    /*
     set s=ql+qm+qz
     call GroupEnumUnitsInRange(g,x,y,600,null)
     loop
@@ -31,6 +32,7 @@ function bgj_1 takes nothing returns nothing
             call GroupRemoveUnit(g,u2)
     endloop
     call DestroyGroup(g)
+    */
     set g=null
     set u=null
     set u1=null

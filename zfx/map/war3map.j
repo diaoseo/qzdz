@@ -111,18 +111,7 @@ function bgj_1 takes nothing returns nothing
     local real x=GetUnitX(u1)
     local real y=GetUnitY(u1)
     local real s
-    set s=ql + qm + qz
-    call GroupEnumUnitsInRange(l__g, x, y, 600, null)
-    loop
-        set u2=FirstOfGroup(l__g)
-        exitwhen u2 == null
-            if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
-                call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2)))
-                call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
-            endif
-            call GroupRemoveUnit(l__g, u2)
-    endloop
-    call DestroyGroup(l__g)
+    
     set l__g=null
     set u=null
     set u1=null
@@ -183,7 +172,7 @@ local timer t=CreateTimer()
     local real gd=GetUnitFlyHeight(u)
     local real sj=LoadReal(libcf__z_h, h, 5)
     if c1 < c then
-        set u=CreateUnit(GetOwningPlayer(u), 'o000', ux, uy, GetUnitFacing(u)) //创建幻影
+        set u=CreateUnit(GetOwningPlayer(u), LoadInteger(libcf__z_h, h, 99), ux, uy, GetUnitFacing(u)) //创建幻影
         call SetUnitFlyHeight(u, gd, 0) //设置幻影的高度
         call SetUnitVertexColor(u, 255, 255, 255, 0) //设置幻影初始透明度
         call UnitAddAbility(u, 'Arav') //添加风暴之鸦
@@ -216,14 +205,13 @@ function libcf__cf_1 takes nothing returns nothing
     local integer c1=LoadInteger(libcf__z_h, h, 4)
 local boolean ty=LoadBoolean(libcf__z_h, h, 7)
     local real gd=LoadReal(libcf__z_h, h, 6)
-    //call BJDebugMsg(GetUnitName(u)+"    "+R2S(jl))
     if c1 < c then
-        if IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_WALKABILITY) and false == IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
-        //X坐标停下来了
+        if IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_WALKABILITY) and IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
+        call BJDebugMsg("出事了？")
         else
             call SetUnitX(u, ux + jl * Cos(a))
         endif
-        if IsTerrainPathable(ux, uy + jl * Sin(a), PATHING_TYPE_WALKABILITY) and false == IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
+        if IsTerrainPathable(ux, uy + jl * Sin(a), PATHING_TYPE_WALKABILITY) and IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
         //Y坐标停下来了
         else
             call SetUnitY(u, uy + jl * Sin(a))
@@ -231,16 +219,14 @@ local boolean ty=LoadBoolean(libcf__z_h, h, 7)
         if ty then
             if c1 > c / 2 then //超过一半上升，未超过下降
                 call SetUnitFlyHeight(u, ( c - c1 ) * gd, 0)
-                call BJDebugMsg(GetUnitName(u) + "    " + I2S(c1))
             else
                 call SetUnitFlyHeight(u, c1 * gd, 0)
-                call BJDebugMsg(GetUnitName(u) + "    " + I2S(c1))
             endif
         endif
         set c1=c1 + 1
         call SaveInteger(libcf__z_h, h, 4, c1)
     else
-        call PauseUnit(u, false)
+        //call PauseUnit(u,false)
         call DestroyTimer(GetExpiredTimer())
         call FlushChildHashtable(libcf__z_h, h)
     endif
@@ -261,20 +247,23 @@ function libcf_cf takes unit u,real x,real y,real s1,real s2,boolean yhy,boolean
     call SaveInteger(libcf__z_h, h, 3, R2I(c)) //刷新次数
     call TimerStart(t, s2, true, function libcf__cf_1) //冲锋
     call SetUnitAnimationByIndex(u, 3)
-    call BJDebugMsg(R2S(xjl) + R2S(jl))
     if ty then
         call UnitAddAbility(u, 'Arav')
         call UnitRemoveAbility(u, 'Arav')
         call SaveBoolean(libcf__z_h, h, 7, ty)
         call SaveReal(libcf__z_h, h, 6, 400 / c) //每次跳跃高度
     endif
-    
     if yhy then
-        call PauseUnit(u, true)
+        //call PauseUnit(u,true)
         set t=CreateTimer()
         set h=GetHandleId(t)
         call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
         call SaveInteger(libcf__z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
+        if LoadInteger(udg_hs, 0, 105) == 1 then
+            call SaveInteger(libcf__z_h, h, 99, 'n004')
+        else
+            call SaveInteger(libcf__z_h, h, 99, 'n005')
+        endif
         call TimerStart(t, 0.04, true, function libcf__cf_3)
         call SaveReal(libcf__z_h, h, 5, s2)
     endif
@@ -317,6 +306,85 @@ function libcf_cf2 takes unit u1,unit u2 returns nothing
     call SaveInteger(libcf__z_h, h, 3, R2I(c))
     call TimerStart(t, 0.04, true, function libcf__cf_1)
     set t=null
+endfunction
+function cfsh_1 takes nothing returns nothing
+    local trigger tr=GetTriggeringTrigger()
+    local integer li=GetHandleId(tr)
+    local unit u= LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(LoadUnitHandle(udg_hs, li, 0))), StringHash("英雄"))
+    local real s=LoadReal(udg_hs, li, 1)
+    local unit u2=GetTriggerUnit()
+    if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+        call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        call BJDebugMsg(R2S(s))
+    endif
+    
+    set tr=null
+    set u=null
+    set u2=null
+endfunction
+function shpx takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer li=GetHandleId(t)
+    local trigger tr=LoadTriggerHandle(udg_hs, li, 0)
+    call FlushChildHashtable(udg_hs, GetHandleId(tr))
+    call FlushChildHashtable(udg_hs, li)
+    call DestroyTrigger(tr)
+    call DestroyTimer(t)
+    set t=null
+    set tr=null
+endfunction
+function libcf_cftimer_1 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local timer t2
+    local real array r
+    local integer array li
+    local unit u
+    local player p1
+    local unit u1
+    local trigger tr
+    set li[0]=GetHandleId(t)
+    set u=LoadUnitHandle(udg_hs, li[0], 0)
+    set p1=GetOwningPlayer(u)
+    set r[1]=GetUnitX(u)
+    set r[2]=GetUnitY(u)
+    set r[3]=LoadReal(udg_hs, li[0], 1)
+    set r[4]=LoadReal(udg_hs, li[0], 2)
+    set r[5]=( 180 / 3.14159 ) * Atan2(r[4] - r[2], r[3] - r[1])
+    set li[1]=- 4
+    set li[2]=LoadInteger(udg_hs, li[0], 3) + 1
+    set li[3]=LoadInteger(udg_hs, li[0], 4)
+    set r[8]=LoadReal(udg_hs, li[0], 5)
+    loop
+        set r[6]=GetUnitX(u) + 600 * Cos(( r[5] + 15 * li[1] ) * 3.14159 / 180)
+        set r[7]=GetUnitY(u) + 600 * Sin(( r[5] + 15 * li[1] ) * 3.14159 / 180)
+        set u1=CreateUnit(p1, 'n003', r[1], r[2], r[5] + 15 * li[1])
+        call SetUnitPathing(u1, false)
+        call AddSpecialEffectTarget("Abilities\\Spells\\Other\\BlackArrow\\BlackArrowMissile.mdl", u1, "sprite")
+        call UnitApplyTimedLife(u1, 'BHwe', 0.5)
+        set tr=CreateTrigger()
+        call TriggerAddAction(tr, function cfsh_1)
+        call SaveUnitHandle(udg_hs, GetHandleId(tr), 0, u1)
+        call SaveReal(udg_hs, GetHandleId(tr), 1, r[8])
+        call TriggerRegisterUnitInRange(tr, u1, 64, null)
+        set t2=CreateTimer()
+        call SaveTriggerHandle(udg_hs, GetHandleId(t2), 0, tr)
+        call TimerStart(t2, 0.5, false, function shpx)
+        call libcf_cf(u1 , r[6] , r[7] , 0.5 , 0.025 , false , false)
+        exitwhen li[1] == 4
+        set li[1]=li[1] + 1
+    endloop
+    if li[2] == li[3] then
+        call FlushChildHashtable(udg_hs, li[0])
+        call DestroyTimer(GetExpiredTimer())
+    else
+        call SaveInteger(udg_hs, li[0], 3, li[2])
+    endif
+    set tr=null
+    set u=null
+    set t=null
+    set p1=null
+    set u1=null
+    set t2=null
 endfunction
 
 //library libcf ends
@@ -364,11 +432,26 @@ endfunction
 //library libchuguai ends
 //library libdeath:
 function death_1 takes nothing returns nothing
-    local unit u1=GetKillingUnit()
+    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetKillingUnit())), StringHash("英雄"))
     local unit u2=GetTriggerUnit()
     local player p1=GetOwningPlayer(u1)
     local integer array li
     local item it
+    local unit u3
+    local integer bl=GetHeroStr(u1, false)
+    local integer bm=GetHeroAgi(u1, false)
+    local integer bz=GetHeroInt(u1, false)
+    local integer ql=GetHeroStr(u1, true)
+    local integer qm=GetHeroAgi(u1, true)
+    local integer qz=GetHeroInt(u1, true)
+    local integer ll=ql - bl
+    local integer lm=qm - bm
+    local integer lz=qz - bz
+    local group l__g
+    local real x
+    local real y
+    local real s
+    set s=ql + qm + qz
     set li[0]=GetHandleId(u1)
     set li[1]=GetHandleId(p1)
     if HaveSavedHandle(udg_hs, li[1], 1) then //检测是否绑定有物品
@@ -419,6 +502,26 @@ function death_1 takes nothing returns nothing
             call BJDebugMsg(I2S(li[30]) + "手套" + I2S(li[33] * 100))
         endif
     endif
+    if GetUnitTypeId(u1) == 'HA0G' then
+        set l__g=CreateGroup()
+        set x=GetUnitX(u2)
+        set y=GetUnitY(u2)
+        call BJDebugMsg(GetUnitName(u1))
+        call GroupEnumUnitsInRange(l__g, x, y, 200, null)
+        loop
+            set u3=FirstOfGroup(l__g)
+            exitwhen u3 == null
+                
+                if GetUnitState(u3, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u3, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl", GetUnitX(u3), GetUnitY(u3))) //创建特效
+                    call UnitDamageTarget(u1, u3, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u3)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    set u3=null
+    set l__g=null
     set it=null
     set p1=null
     set u2=null
@@ -1435,6 +1538,107 @@ endfunction
 
 //library libselecthero ends
 //library libskill:
+function timer_smjq takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer i0=GetHandleId(t)
+    local integer i1=LoadInteger(udg_hs, i0, 0)
+    local integer i2=0
+    loop
+        set i2=i2 + 1
+        call DestroyLightning(LoadLightningHandle(udg_hs, i0, i2))
+        exitwhen i2 == i1
+    endloop
+    call FlushChildHashtable(udg_hs, i0)
+    call DestroyTimer(t)
+    set t=null
+endfunction
+function timerhyy takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer i1=GetHandleId(t)
+    local integer i2=LoadInteger(udg_hs, i1, 1)
+    local unit u1=LoadUnitHandle(udg_hs, i1, 0)
+    local real s=LoadReal(udg_hs, i1, 2)
+    local unit u2
+    local integer i3=LoadInteger(udg_hs, i1, 3)
+    local group l__g
+    local unit u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), StringHash("英雄"))
+    if i3 == i2 then
+        call FlushChildHashtable(udg_hs, i1)
+        call DestroyTimer(GetExpiredTimer())
+    else
+        set l__g=CreateGroup()
+        call GroupEnumUnitsInRange(l__g, GetUnitX(u1), GetUnitY(u1), 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call UnitDamageTarget(u3, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    set i3=i3 + 1
+    call SaveInteger(udg_hs, i1, 3, i3)
+    endif
+    set u3=null
+    set l__g=null
+    set u2=null
+    set u1=null
+    set t=null
+endfunction
+function timer_2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer array li
+    local unit u
+    local group g1
+    local group g2
+    local unit u1
+    local unit u2
+    local unit u3
+    local real s
+    set li[0]=GetHandleId(t)
+    set li[1]=LoadInteger(udg_hs, li[0], 2)
+    set g2=LoadGroupHandle(udg_hs, li[0], 1)
+    set u=LoadUnitHandle(udg_hs, li[0], 0)
+    set li[3]=LoadInteger(udg_hs, li[0], 3)
+    if li[3] == li[1] then
+        set s=LoadReal(udg_hs, li[0], 11)
+        set u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u)), StringHash("英雄"))
+        loop
+            set u2=FirstOfGroup(g2)
+            exitwhen u2 == null
+            call libcf_cf1(u2 , u)
+            call BJDebugMsg(GetUnitName(u) + "     " + GetUnitName(u2))
+            call UnitDamageTarget(u3, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+            call GroupRemoveUnit(g2, u2)
+        endloop
+        call DestroyEffect(LoadEffectHandle(udg_hs, li[0], 10))
+        call DestroyGroup(g2)
+        call FlushChildHashtable(udg_hs, li[0])
+        call DestroyTimer(t)
+    else
+        set g1=CreateGroup()
+        call GroupEnumUnitsInRange(g1, GetUnitX(u), GetUnitY(u), 600, null)
+        loop
+            set u2=FirstOfGroup(g1)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call GroupAddUnit(g2, u2)
+                    
+                endif
+                call GroupRemoveUnit(g1, u2)
+        endloop
+        call DestroyGroup(g1)
+    
+    endif
+    call SaveInteger(udg_hs, li[0], 3, li[3] + 1)
+    set t=null
+    set u=null
+    set g1=null
+    set u2=null
+    set g2=null
+    set u3=null
+endfunction
 function skill_1 takes nothing returns nothing
     local unit u=GetTriggerUnit()
     local integer bl=GetHeroStr(u, false)
@@ -1456,6 +1660,7 @@ function skill_1 takes nothing returns nothing
     local real y
     local real array f
     local real s
+    local timer t
     set s=ql + qm + qz
     if GetSpellAbilityId() == 'A00I' then //骑士之志
         set l__g=CreateGroup()
@@ -1575,22 +1780,173 @@ function skill_1 takes nothing returns nothing
         endloop
         call DestroyGroup(l__g)
     endif
-    if GetSpellAbilityId() == 'A011' then
-        set f[0]=GetUnitFacing(u)
+    if GetSpellAbilityId() == 'A011' then //箭雨突袭
+        set t=CreateTimer()
+        set li[0]=GetHandleId(t)
+        call SaveReal(udg_hs, li[0], 1, GetSpellTargetX())
+        call SaveReal(udg_hs, li[0], 2, GetSpellTargetY())
+        call SaveInteger(udg_hs, li[0], 4, 3)
+        call SaveReal(udg_hs, li[0], 5, s / 3)
+        call SaveUnitHandle(udg_hs, li[0], 0, u)
+        call TimerStart(t, 0.2, true, function libcf_cftimer_1)
+    endif
+    if GetSpellAbilityId() == 'A013' then //幻影斩？
+        set f[1]=GetUnitX(GetSpellTargetUnit())
+        set f[2]=GetUnitY(GetSpellTargetUnit())
+        call SaveInteger(udg_hs, 0, 105, 1) //1是斧王
+        call libcf_cf(u , f[1] , f[2] , 0.5 , 0.025 , true , true)
+        call UnitDamageTarget(u, GetSpellTargetUnit(), s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        call BJDebugMsg(R2S(s))
+    endif
+    if GetSpellAbilityId() == 'A019' then //幻影斩？
+        set f[1]=GetUnitX(GetSpellTargetUnit())
+        set f[2]=GetUnitY(GetSpellTargetUnit())
+        call SaveInteger(udg_hs, 0, 105, 0) //黑贞德
+        call libcf_cf(u , f[1] , f[2] , 0.5 , 0.025 , true , true)
+        call UnitDamageTarget(u, GetSpellTargetUnit(), s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        call BJDebugMsg(R2S(s))
+    endif
+    if GetSpellAbilityId() == 'A01A' then //狂风不止
+        set f[1]=GetSpellTargetX()
+        set f[2]=GetSpellTargetY()
+        //set f[0]=(180/3.14159)*Atan2(f[2]-GetUnitY(u),f[1]-GetUnitX(u))
+        set u3=CreateUnit(p1, 'n006', GetUnitX(u), GetUnitY(u), GetUnitFacing(u))
+        call UnitApplyTimedLife(u3, 'BHwe', 1) //设置生命周期
+        call libcf_cf(u3 , f[1] , f[2] , 0.5 , 0.025 , false , false)
+        set t=CreateTimer()
+        call SaveEffectHandle(udg_hs, GetHandleId(t), 10, AddSpecialEffectTarget("Abilities\\Spells\\Other\\Tornado\\TornadoElemental.mdx", u3, "sprite")) //绑定特效到单位
+        call SaveGroupHandle(udg_hs, GetHandleId(t), 1, CreateGroup())
+        call SaveInteger(udg_hs, GetHandleId(t), 2, R2I(0.5 / 0.025))
+        call SaveUnitHandle(udg_hs, GetHandleId(t), 0, u3)
+        call SaveReal(udg_hs, GetHandleId(t), 11, s)
+        call TimerStart(t, 0.025, true, function timer_2)
+    
+    endif
+    if GetSpellAbilityId() == 'A017' then //EX咖喱棒
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A018' then //吸斩
+        call libcf_cf2(GetSpellTargetUnit() , u)
+        call UnitDamageTarget(u, GetSpellTargetUnit(), s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+    endif
+    if GetSpellAbilityId() == 'A015' then //火焰雨
+        set l__g=CreateGroup()
+        set x=GetSpellTargetX()
+        set y=GetSpellTargetY()
+        set u3=CreateUnit(p1, 'n000', GetSpellTargetX(), GetSpellTargetY(), 0) //创建马甲
+        call UnitApplyTimedLife(u3, 'BHwe', 2.01) //设置生命周期
+        set t=CreateTimer()
+        call SaveUnitHandle(udg_hs, GetHandleId(t), 0, u3)
+        call SaveInteger(udg_hs, GetHandleId(t), 1, 10)
+        call SaveReal(udg_hs, GetHandleId(t), 2, s / 10)
+        call TimerStart(t, 0.2, true, function timerhyy)
+        //可在此处创建一个特效来继续伤害敌人
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call libcf_cf2(u2 , u3)
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A016' then //火焰光线
         set f[1]=GetUnitX(u)
         set f[2]=GetUnitY(u)
-        set li[0]=- 4
+        set f[3]=GetSpellTargetX()
+        set f[4]=GetSpellTargetY()
+        set f[0]=Atan2(f[4] - f[2], f[3] - f[1])
+        set li[0]=0
+        set l__g=CreateGroup()
         loop
-            set x=GetUnitX(u) + 600 * Cos(( f[0] + 15 * li[0] ) * 3.14159 / 180)
-            set y=GetUnitY(u) + 600 * Sin(( f[0] + 15 * li[0] ) * 3.14159 / 180)
-            set u1=CreateUnit(p1, 'n003', f[1], f[2], f[0] + 15 * li[0])
-            call AddSpecialEffectTarget("Abilities\\Spells\\Other\\BlackArrow\\BlackArrowMissile.mdl", u1, "sprite")
-            call UnitApplyTimedLife(u1, 'BHwe', 0.5)
-            call libcf_cf(u1 , x , y , 0.5 , 0.025 , false , false)
-            call BJDebugMsg(R2S(f[1]) + "  " + R2S(f[2]) + "  " + R2S(x) + "  " + R2S(y))
-            exitwhen li[0] == 4
+            exitwhen li[0] == 9
+            call BJDebugMsg("wtf")
+            set u3=CreateUnit(p1, 'n000', f[1] + 100 * li[0] * Cos(f[0]), f[2] + 100 * li[0] * Sin(f[0]), ( 180 / 3.14159 ) * f[0])
+            call SetUnitScale(u3, 2, 2, 0.5)
+            call UnitApplyTimedLife(u3, 'BHwe', 2) //设置生命周期
+            //call AddSpecialEffectTarget("Abilities\\Spells\\Orc\\LiquidFire\\Liquidfire.mdl",u3,"sprite")
+            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Demon\\DarkPortal\\DarkPortalTarget.mdl", u3, "sprite"))
+            set f[5]=GetUnitX(u3)
+            set f[6]=GetUnitY(u3)
+            call GroupEnumUnitsInRange(l__g, f[5], f[6], 200, null)
+            loop
+                set u2=FirstOfGroup(l__g)
+                exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then //选敌人
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+            endloop
             set li[0]=li[0] + 1
         endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A01B' then //剑之意志
+        call UnitAddItem(u, CreateItem('I000', GetUnitX(u), GetUnitY(u)))
+    endif
+    if GetSpellAbilityId() == 'A01D' then //冰雪王朝
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetSpellAbilityId() == 'A01F' then //生命汲取
+        set l__g=CreateGroup()
+        set x=GetUnitX(u)
+        set y=GetUnitY(u)
+        set t=CreateTimer()
+        set li[0]=GetHandleId(t)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        set f[1]=GetUnitX(u)
+        set f[2]=GetUnitY(u)
+        
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    set li[1]=li[1] + 1
+                    call SaveLightningHandle(udg_hs, li[0], li[1], AddLightning("DRAL", true, f[1], f[2], GetUnitX(u2), GetUnitY(u2)))
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call SaveInteger(udg_hs, li[0], 0, li[1])
+        call DestroyGroup(l__g)
+        if li[1] == 0 then
+        call FlushChildHashtable(udg_hs, li[0])
+        else
+        call TimerStart(t, 0.5, false, function timer_smjq)
+        endif
+        //加血没写上，没想好加血的公式
+        
+    endif
+    if GetSpellAbilityId() == 'A01G' then //血流爆炸
+        call SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) * 60 * 0.01)
     endif
     set l__g=null
     set u=null
@@ -1598,6 +1954,7 @@ function skill_1 takes nothing returns nothing
     set u2=null
     set u3=null
     set p1=null
+    set t=null
 endfunction
 function skill_jzxj_1 takes nothing returns nothing
     local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
@@ -4240,7 +4597,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Tue Jun 12 14:49:48 2018
+//   Date: Wed Jun 13 16:20:17 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================

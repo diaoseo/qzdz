@@ -2,11 +2,27 @@
 library libdeath
 
 function death_1 takes nothing returns nothing
-    local unit u1=GetKillingUnit()
+    local unit u1=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetKillingUnit())),StringHash("英雄"))
     local unit u2=GetTriggerUnit()
     local player p1=GetOwningPlayer(u1)
     local integer array li
     local item it
+    local unit u3
+    local integer bl=GetHeroStr(u1,false)
+    local integer bm=GetHeroAgi(u1,false)
+    local integer bz=GetHeroInt(u1,false)
+    local integer ql=GetHeroStr(u1,true)
+    local integer qm=GetHeroAgi(u1,true)
+    local integer qz=GetHeroInt(u1,true)
+    local integer ll=ql-bl
+    local integer lm=qm-bm
+    local integer lz=qz-bz
+    local group g
+    local real x
+    local real y
+    local real s//伤害
+
+    set s=ql+qm+qz
     set li[0]=GetHandleId(u1)
     set li[1]=GetHandleId(p1)
 
@@ -61,6 +77,26 @@ function death_1 takes nothing returns nothing
         endif
     endif
 
+    if GetUnitTypeId(u1)=='HA0G' then
+        set g=CreateGroup()
+        set x=GetUnitX(u2)
+        set y=GetUnitY(u2)
+        call BJDebugMsg(GetUnitName(u1))
+        call GroupEnumUnitsInRange(g,x,y,200,null)
+        loop
+            set u3=FirstOfGroup(g)
+            exitwhen u3==null
+                
+                if GetUnitState(u3,UNIT_STATE_LIFE)>0 and IsUnitOwnedByPlayer(u3,Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",GetUnitX(u3),GetUnitY(u3)))//创建特效
+                    call UnitDamageTarget(u1,u3,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
+                endif
+                call GroupRemoveUnit(g,u3)
+        endloop
+        call DestroyGroup(g)
+    endif
+    set u3=null
+    set g=null
     set it=null
     set p1=null
     set u2=null
