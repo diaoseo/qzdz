@@ -136,7 +136,9 @@ function skill_1 takes nothing returns nothing
     local real array f
     local real s//伤害
     local timer t
-    set s=ql+qm+qz
+    local integer id=GetPlayerId(p1)
+    set s= (ll+lm+lz)*0.4+(bl+bm+bz)*0.2
+    set s=s*(vx[id]+zx[id]+cx[id]+yx[id]+fx[id])
     if GetSpellAbilityId()=='A00I' then//骑士之志
         set g=CreateGroup()
         set x=GetUnitX(u)

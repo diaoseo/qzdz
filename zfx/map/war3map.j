@@ -24,6 +24,9 @@ constant boolean LIBRARY_libkj=true
 //globals from libmsg:
 constant boolean LIBRARY_libmsg=true
 //endglobals from libmsg
+//globals from libsywp:
+constant boolean LIBRARY_libsywp=true
+//endglobals from libsywp
 //globals from libtime0:
 constant boolean LIBRARY_libtime0=true
 //endglobals from libtime0
@@ -82,6 +85,13 @@ integer i=0
 integer b=0
 integer g=0
 real jsqjg=20
+real array vx
+real array cx
+real array zx
+real array yx
+real array fx
+integer array m
+integer array lgf
 //endglobals from csh
     // User-defined
 hashtable udg_hs= null
@@ -111,7 +121,21 @@ function bgj_1 takes nothing returns nothing
     local real x=GetUnitX(u1)
     local real y=GetUnitY(u1)
     local real s
-    
+    local integer id=GetPlayerId(GetOwningPlayer(u))
+    //伤害系数在这里设置
+    set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+    set s=s * ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] )
+    call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+    loop
+        set u2=FirstOfGroup(l__g)
+        exitwhen u2 == null
+            if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2)))
+                call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+            endif
+            call GroupRemoveUnit(l__g, u2)
+    endloop
+    call DestroyGroup(l__g)
     set l__g=null
     set u=null
     set u1=null
@@ -461,7 +485,7 @@ function death_1 takes nothing returns nothing
         set li[11]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
         set li[12]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
         set li[13]=( li[11] + 4 ) / 5 //设置升级所需经验
-        if li[10] == li[13] * 100 then //判断升级经验是否足够
+        if li[10] >= li[13] * 100 then //判断升级经验是否足够
             if ModuloInteger(li[11], 5) != 0 then //判断是否需要材料
                 call UnitAddItem(u1, CreateItem(li[12], GetUnitX(u1), GetUnitY(u1))) //给予强化石
             endif
@@ -477,7 +501,7 @@ function death_1 takes nothing returns nothing
         set li[21]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
         set li[22]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
         set li[23]=( li[21] + 4 ) / 5 //设置升级所需经验
-        if li[20] == li[23] * 100 then //判断升级经验是否足够
+        if li[20] >= li[23] * 100 then //判断升级经验是否足够
             if ModuloInteger(li[21], 5) != 0 then //判断是否需要材料
                 call UnitAddItem(u1, CreateItem(li[22], GetUnitX(u1), GetUnitY(u1))) //给予强化石
             endif
@@ -493,7 +517,7 @@ function death_1 takes nothing returns nothing
         set li[31]=LoadInteger(udg_hs, 25, GetItemTypeId(it)) //读取升级对应的等级
         set li[32]=LoadInteger(udg_hs, GetItemTypeId(it), 2) //读取升级等级对应的强化石
         set li[33]=li[31] //设置升级所需经验
-        if li[30] == li[33] * 100 then //判断升级经验是否足够
+        if li[30] >= li[33] * 100 then //判断升级经验是否足够
             if ModuloInteger(li[31], 5) != 0 then //判断是否需要材料
                 call UnitAddItem(u1, CreateItem(li[32], GetUnitX(u1), GetUnitY(u1))) //给予强化石
             endif
@@ -506,12 +530,10 @@ function death_1 takes nothing returns nothing
         set l__g=CreateGroup()
         set x=GetUnitX(u2)
         set y=GetUnitY(u2)
-        call BJDebugMsg(GetUnitName(u1))
         call GroupEnumUnitsInRange(l__g, x, y, 200, null)
         loop
             set u3=FirstOfGroup(l__g)
             exitwhen u3 == null
-                
                 if GetUnitState(u3, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u3, Player(11)) then
                     call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl", GetUnitX(u3), GetUnitY(u3))) //创建特效
                     call UnitDamageTarget(u1, u3, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
@@ -519,6 +541,11 @@ function death_1 takes nothing returns nothing
                 call GroupRemoveUnit(l__g, u3)
         endloop
         call DestroyGroup(l__g)
+    endif
+    if HaveSavedInteger(udg_hs, GetHandleId(u2), 666) then
+        set lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6]=lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6] - 1
+        call FlushChildHashtable(udg_hs, GetHandleId(u2))
+        call RemoveUnit(u2)
     endif
     set u3=null
     set l__g=null
@@ -572,6 +599,7 @@ function hg takes unit hghero returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77) + 128
     call SetUnitPosition(hghero, x, y) //传送
+    set lgf[GetPlayerId(GetOwningPlayer(hghero))]=0 //关闭练功房
     if GetOwningPlayer(hghero) == GetLocalPlayer() then //异步
         call SetCameraPosition(x, y)
         call ClearSelection()
@@ -607,6 +635,115 @@ function msg takes integer v returns string
 endfunction
 
 //library libmsg ends
+//library libsywp:
+function sywp_1 takes nothing returns nothing
+    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
+    local unit u2=GetTriggerUnit()
+    local item litem=GetManipulatedItem()
+    local integer array li
+    local real array r
+    set li[0]=GetItemTypeId(litem)
+    if li[0] == 'IB2Y' then //一级回复药
+        set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
+        if r[0] > 0 then
+            call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 5000)
+        endif
+    endif
+    if li[0] == 'IB2Z' then //二级回复药
+        set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
+        if r[0] > 0 then
+            call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 20000)
+        endif
+    endif
+    if li[0] == 'IB30' then //三级回复药
+        set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
+        if r[0] > 0 then
+            call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 100000)
+        endif
+    endif
+    if li[0] == 'IB31' then //四级回复药
+        set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
+        set r[1]=GetUnitState(u1, UNIT_STATE_MAX_LIFE)
+        if r[0] > 0 then
+            call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + r[1] / 2)
+        endif
+    endif
+    if li[0] == 'IB41' then //蜘蛛之血
+        if u2 == u1 then
+            set li[0]=0
+            set li[1]=GetHandleId(GetOwningPlayer(u1))
+            loop
+                set li[0]=li[0] + 1
+                if HaveSavedHandle(udg_hs, li[1], li[0]) then //检测是否绑定有物品
+                    set litem=LoadItemHandle(udg_hs, li[1], li[0]) //读取绑定的物品
+                    set li[9]=GetHandleId(litem) //读取绑定物品的handle
+                    set li[11]=LoadInteger(udg_hs, 25, GetItemTypeId(litem)) //读取升级对应的等级
+                    if li[11] > 5 and li[11] <= 10 then
+                        set li[10]=LoadInteger(udg_hs, li[9], GetItemLevel(litem)) + 30 //读取经验和经验+30
+                        set li[12]=LoadInteger(udg_hs, GetItemTypeId(litem), 2) //读取升级等级对应的强化石
+                        set li[13]=( li[11] + 4 ) / 5 //设置升级所需经验
+                        call BJDebugMsg(I2S(li[10]) + "   " + I2S(li[13] * 100))
+                        if li[10] >= li[13] * 100 then //判断升级经验是否足够
+                            if ModuloInteger(li[11], 5) != 0 then //判断是否需要材料
+                                call UnitAddItem(u1, CreateItem(li[12], GetUnitX(u1), GetUnitY(u1))) //给予强化石
+                            endif
+                        else //经验不足
+                            call SaveInteger(udg_hs, li[9], GetItemLevel(litem), li[10]) //记录经验
+                            //此处应显示经验给玩家
+                        endif
+                    endif
+                endif
+                exitwhen li[0] == 2
+            endloop
+        endif
+    endif
+    if li[0] == 'IB40' then //蛇龙之胆
+        if u2 == u1 then
+            set li[0]=0
+            set li[1]=GetHandleId(GetOwningPlayer(u1))
+            loop
+                set li[0]=li[0] + 1
+                if HaveSavedHandle(udg_hs, li[1], li[0]) then //检测是否绑定有物品
+                    set litem=LoadItemHandle(udg_hs, li[1], li[0]) //读取绑定的物品
+                    set li[9]=GetHandleId(litem) //读取绑定物品的handle
+                    set li[11]=LoadInteger(udg_hs, 25, GetItemTypeId(litem)) //读取升级对应的等级
+                    if li[11] > 10 and li[11] <= 15 then
+                        set li[10]=LoadInteger(udg_hs, li[9], GetItemLevel(litem)) + 30 //读取经验和经验+30
+                        set li[12]=LoadInteger(udg_hs, GetItemTypeId(litem), 2) //读取升级等级对应的强化石
+                        set li[13]=( li[11] + 4 ) / 5 //设置升级所需经验
+                        call BJDebugMsg(I2S(li[10]) + "   " + I2S(li[13] * 100))
+                        if li[10] >= li[13] * 100 then //判断升级经验是否足够
+                            if ModuloInteger(li[11], 5) != 0 then //判断是否需要材料
+                                call UnitAddItem(u1, CreateItem(li[12], GetUnitX(u1), GetUnitY(u1))) //给予强化石
+                            endif
+                        else //经验不足
+                            call SaveInteger(udg_hs, li[9], GetItemLevel(litem), li[10]) //记录经验
+                            //此处应显示经验给玩家
+                        endif
+                    endif
+                endif
+                exitwhen li[0] == 2
+            endloop
+        endif
+    endif
+    
+    set litem=null
+    set u1=null
+    set u2=null
+endfunction
+function sywp takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    call TriggerAddAction(tr, function sywp_1)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(0), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(1), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(2), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(3), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(4), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    call TriggerRegisterPlayerUnitEvent(tr, Player(5), EVENT_PLAYER_UNIT_USE_ITEM, null)
+    set tr=null
+endfunction
+
+//library libsywp ends
 //library libtime0:
 function sys_cg takes nothing returns nothing
     local integer li1= - 1
@@ -629,10 +766,33 @@ function sys_cg takes nothing returns nothing
     set unitt=null
 endfunction
 function time1s takes nothing returns nothing
+    local integer li0=0
+    local integer li1
+    local real x=- 4480
+    local real y=- 4480
+    local unit u
     set i=i + 1
     if g > 0 then
         call sys_cg()
     endif
+    loop
+        if lgf[li0] == 1 then //前六位表示开启刷怪
+            if lgf[li0 + 6] < 5 then //中间六位表示练功房怪物不足
+                set li1=0
+                loop
+                    exitwhen li1 == 20
+                    set li1=li1 + 1
+                    set u=CreateUnit(Player(11), lgf[li0 + 12], x, y, 225) //末六位表示刷出的怪
+                    call SaveInteger(udg_hs, GetHandleId(u), 666, li0)
+                endloop
+                set lgf[li0 + 6]=lgf[li0 + 6] + 20
+            endif
+        endif
+        exitwhen li0 == 5
+        set li0=li0 + 1
+        set y=y + 1792
+    endloop
+    set u=null
 endfunction
 function xzndjsq takes nothing returns nothing
     if LoadBoolean(udg_hs, 0, StringHash("已选择难度")) then //判断是否已选择难度
@@ -656,6 +816,12 @@ function time0_1 takes nothing returns nothing
     local button an
     local string array str
     call TimerStart(lti, 1, true, function time1s) //启动难度选择时限计时器
+    call BJDebugMsg(I2S(m[0]))
+    call BJDebugMsg(I2S(StringHash(GetPlayerName(Player(0)))))
+    call BJDebugMsg(I2S(StringHash("0")))
+    call BJDebugMsg(I2S(LoadInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0])))
+    
+    
     set lti=null
     set dhk=DialogCreate()
     call DialogSetMessage(dhk, "选择难度")
@@ -1195,11 +1361,204 @@ function getitem_2 takes nothing returns nothing
     local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
     local item litem=GetManipulatedItem()
     local integer ti= GetItemTypeId(litem)
+    local integer ti1=LoadInteger(udg_hs, 10, ti)
+    local real x= LoadReal(udg_hs, 4, ti1)
+    local real y= LoadReal(udg_hs, 5, ti1)
+    local real face= LoadReal(udg_hs, 6, ti1)
+    local unit u1= GetTriggerUnit()
     local integer lv=GetItemLevel(litem)
+    local integer array li
     if GetItemType(litem) == ITEM_TYPE_POWERUP then //判断能量提升
-        call UnitAddItem(u, litem) //转移物品
+        if lv == 1 and GetUnitState(u, UNIT_STATE_LIFE) > 0.405 then //判断等级开启传送
+            call UnitAddItem(u1, litem) //转移物品
+            return //退出
+        endif
+        if lv == 2 or lv == 3 or lv == 4 then //2级武器,3级衣服,4级护手
+            set li[0]=0 //初始化循环
+            set li[1]=LoadInteger(udg_hs, 22, ti) //读取强化书等级
+            set li[2]=LoadInteger(udg_hs, ti, lv) //读取强化书对应武器类型
+            loop //遍历物品栏
+                exitwhen li[0] == 6
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[2] then //判断有无对应装备
+                    set li[3]=GetItemTypeId(UnitItemInSlot(u1, li[0])) //读取对应装备
+                    call RemoveSavedInteger(udg_hs, GetHandleId(UnitItemInSlot(u1, li[0])), GetItemLevel(UnitItemInSlot(u1, li[0]))) //清除即将移除的物品绑定哈希表
+                    call RemoveItem(UnitItemInSlot(u1, li[0])) //删除旧装备
+                    set litem=CreateItem(LoadInteger(udg_hs, 21, li[3]), GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit())) //创建新装备
+                    call UnitAddItem(u1, litem) //添加给单位
+                    call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备已升级成" + GetItemName(litem)) //发送辣鸡消息
+                    set litem=null
+                    set u1=null
+                    call RemoveItem(GetManipulatedItem()) //能量提升直排
+                    return //退出
+                endif
+                set li[0]=li[0] + 1
+            endloop
+            call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "装备强化失败，请检查你的装备")
+            call RemoveItem(GetManipulatedItem()) //能量提升直排
+            set litem=null
+            set u1=null
+            return
+        endif
+        if lv == 7 then
+            set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
+            set lgf[GetPlayerId(GetOwningPlayer(u1)) + 12]=ti + 738131968
+        endif
+        if lv == 8 and GetUnitState(u, UNIT_STATE_LIFE) > 0.405 then
+            call UnitAddItem(u, CreateItem(1229008944 + GetPlayerId(GetOwningPlayer(u)), GetUnitX(u), GetUnitY(u)))
+        endif
+        call RemoveItem(GetManipulatedItem()) //能量提升直排
+    endif
+    if GetItemType(litem) == ITEM_TYPE_PURCHASABLE then //判断是否材料，类型为可购买
+        if lv == 1 then //一级新手装备，直接给予英雄真强化书
+            call UnitAddItem(u, litem) //转移物品
+            
+        endif
+        if lv == 2 then //二级属于真材实料，需要判断玩家是否材料齐全
+            //目前如果玩家拾取到未注册的可购买类物品会崩溃，原因是死循环，因为未注册无法获取需要几个材料
+            set li[0]=LoadInteger(udg_hs, ti, 0) //获取物品合成需要几个材料
+            set li[1]=0 //初始化主循环
+            set li[2]=0 //初始化子循环
+            set li[3]=0 //初始化玩家拥有材料种类数量
+            set li[4]=0 //初始化合成循环
+            loop
+                loop
+                    if GetItemTypeId(UnitItemInSlot(u1, li[2])) == LoadInteger(udg_hs, ti, li[1] + 1) then //判断单位是否有所需材料
+                        call SaveItemHandle(udg_hs, StringHash("材料"), li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
+                        set li[3]=li[3] + 1 //记录材料种类数量
+                        set li[2]=5
+                        if li[1] == 0 then
+                            set li[5]=GetItemTypeId(UnitItemInSlot(u1, li[2]))
+                        endif
+                    endif
+                    exitwhen li[2] == 5
+                    set li[2]=li[2] + 1
+                endloop
+                set li[1]=li[1] + 1
+                set li[2]=0 //恢复循环数
+                exitwhen li[1] == li[0] //循环所需材料次数
+            endloop
+            if li[0] == li[3] then //玩家已拥有足够的材料
+                set litem=LoadItemHandle(udg_hs, StringHash("材料"), 0) //读取主线材料
+                set li[5]=GetItemTypeId(litem) //读取主线材料ID
+                set li[6]=LoadInteger(udg_hs, 25, li[5]) //读取升级对应的等级
+                set li[7]=( ( li[6] + 4 ) / 5 ) * 100 //读取升级所需经验
+                set li[8]=GetHandleId(litem)
+                set li[9]=GetItemLevel(litem)
+                set li[10]=LoadInteger(udg_hs, li[8], li[9]) + 1
+                set li[11]=0 //判读是否具备升级条件
+                if GetItemType(litem) == ITEM_TYPE_PERMANENT and li[6] < 16 and ModuloInteger(li[6], 5) == 0 and ( li[9] == 2 or li[9] == 1 ) then //只有武器和衣服需要判断经验来合成
+                    if li[7] <= li[10] then //判断经验是否足够
+                    else
+                    call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "材料已齐全，装备经验不足")
+                    set li[11]=1 //拒绝升级
+                    call BJDebugMsg(I2S(li[7]) + "   " + I2S(li[10]))
+                    endif
+                endif
+                if li[11] == 0 then
+                    if LoadBoolean(udg_hs, ti, 10) then //判断是合成还是强化，区别在强化的循环
+                        loop //删除多余物品
+                            set li[4]=li[4] + 1
+                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            exitwhen li[4] == li[0]
+                        endloop
+                        //进入强化阶段
+                        call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
+                    else
+                        loop //删除多余物品
+                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            exitwhen li[4] == li[0]
+                            set li[4]=li[4] + 1
+                        endloop
+                        //进入合成阶段
+                        call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
+                    endif
+                endif
+            endif
+            call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
+        endif
+        if lv == 3 then //三级五行强化
+            set li[0]=0 //初始化循环
+            set li[1]=0
+            loop
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == 'IB13' or GetItemTypeId(UnitItemInSlot(u1, li[0])) == 'IB2E' then
+                    set li[1]=GetItemTypeId(UnitItemInSlot(u1, li[0]))
+                    set li[3]=li[0]
+                    set li[0]=5
+                endif
+                exitwhen li[0] == 5
+                set li[0]=li[0] + 1
+            endloop
+            if li[1] != 0 then
+                set li[4]=GetRandomInt(1, 5)
+                call RemoveItem(UnitItemInSlot(u1, li[3]))
+                call RemoveItem(litem)
+                set litem=CreateItem(LoadInteger(udg_hs, li[1], li[4]), GetUnitX(u1), GetUnitY(u1))
+                call UnitAddItem(u1, litem)
+            endif
+        endif
+        if lv == 4 then //四级也是直接给
+            set li[1]=LoadInteger(udg_hs, GetItemTypeId(litem), 0)
+            set li[0]=0 //初始化循环
+            set li[2]=LoadInteger(udg_hs, GetItemTypeId(litem), 1)
+            loop
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[1] then
+                    call RemoveItem(UnitItemInSlot(u1, li[0]))
+                    call RemoveItem(litem)
+                    call UnitAddItem(u1, CreateItem(li[2], GetUnitX(u1), GetUnitY(u1)))
+                    set li[0]=5
+                endif
+                exitwhen li[0] == 5
+                set li[0]=li[0] + 1
+            endloop
+        endif
+        if lv == 5 then //五级只有一个辣鸡
+            set li[0]='IB3Q'
+            set li[1]='IB3R'
+            set li[2]='IB3S'
+            set li[3]='IB3T'
+            set li[4]=0
+            set li[5]=0
+            set li[6]=0
+            loop
+                loop
+                    if GetItemTypeId(UnitItemInSlot(u1, li[5])) == li[li[4]] then
+                        set li[6]=li[6] + 1
+                        call SaveItemHandle(udg_hs, 10086, li[6], UnitItemInSlot(u1, li[5]))
+                        set li[5]=5
+                    endif
+                    exitwhen li[5] == 5
+                    set li[5]=li[5] + 1
+                endloop
+                exitwhen li[4] == 3
+                set li[4]=li[4] + 1
+                set li[5]=0
+            endloop
+            if li[6] == 4 then
+                set li[5]=0
+                loop
+                    exitwhen li[5] == 4
+                    set li[5]=li[5] + 1
+                    call RemoveItem(LoadItemHandle(udg_hs, 10086, li[5]))
+                endloop
+                call UnitAddItem(u1, CreateItem('IB2D', GetUnitX(u1), GetUnitY(u1)))
+            endif
+        endif
+    endif
+    if GetItemType(litem) == ITEM_TYPE_CHARGED then //判断是否可充物品
+        set li[0]=0
+        loop
+            if GetItemTypeId(UnitItemInSlot(u1, li[0])) == GetItemTypeId(litem) and litem != UnitItemInSlot(u1, li[0]) then
+                call SetItemCharges(UnitItemInSlot(u1, li[0]), GetItemCharges(UnitItemInSlot(u1, li[0])) + GetItemCharges(litem)) //可充物品自动叠加
+                call RemoveItem(litem) //移除已叠加物品
+                set li[0]=5
+            endif
+            exitwhen li[0] == 5
+            set li[0]=li[0] + 1
+        endloop
     endif
     set litem=null
+    set u=null
+    set u1=null
 endfunction
 function getitem_1 takes nothing returns nothing
     local item litem=GetManipulatedItem()
@@ -1252,6 +1611,14 @@ function getitem_1 takes nothing returns nothing
             set u1=null
             return
         endif
+        if lv == 7 then
+            set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
+            set lgf[GetPlayerId(GetOwningPlayer(u1)) + 12]=ti + 738131968
+            call BJDebugMsg(GetObjectName(ti + 738131968))
+        endif
+        if lv == 8 then
+            call UnitAddItem(u1, CreateItem(1229008944 + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1)))
+        endif
         call RemoveItem(GetManipulatedItem()) //能量提升直排
     endif
     if GetItemType(litem) == ITEM_TYPE_PERMANENT then //判断永久物品
@@ -1261,25 +1628,43 @@ function getitem_1 takes nothing returns nothing
                 exitwhen li[0] == 6
                 if GetItemLevel(UnitItemInSlot(u1, li[0])) == lv and UnitItemInSlot(u1, li[0]) != litem and ITEM_TYPE_PERMANENT == GetItemType(UnitItemInSlot(u1, li[0])) then //只能携带一件同类装备
                     call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 10, msg(1) + "你身上已有同类物品")
-                    call UnitRemoveItem(u1, litem)
+                    call UnitRemoveItem(u1, litem) //丢掉捡到的物品
+                    set litem=UnitItemInSlot(u1, li[0]) //记录匹配的物品
+                    call UnitRemoveItem(u1, litem) //丢掉匹配的物品
+                    call UnitAddItem(u1, litem) //在捡起丢掉的物品
                     set litem=null
                     set u1=null
                     return
                 endif
                 set li[0]=li[0] + 1
             endloop
-            if ( lv < 3 and LoadInteger(udg_hs, 25, ti) < 16 ) or ( lv == 3 and LoadInteger(udg_hs, 25, ti) < 6 and LoadInteger(udg_hs, 25, ti) > 0 ) then //小于15级的武器和衣服才绑定
+            if ( lv < 3 and LoadInteger(udg_hs, 25, ti) < 16 and LoadInteger(udg_hs, 25, ti) > 0 ) or ( lv == 3 and LoadInteger(udg_hs, 25, ti) < 6 and LoadInteger(udg_hs, 25, ti) > 0 ) then //小于15级的武器和衣服才绑定
                 call SaveItemHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), lv, litem) //物品绑定玩家
             endif
         endif
     endif
     if GetItemType(litem) == ITEM_TYPE_PURCHASABLE then //判断是否材料，类型为可购买
-        if lv == 1 then
-            set li[0]=GetItemLevel(UnitItemInSlot(u1, 0))
+        if lv == 1 then //一级新手装备，直接给予英雄真强化书
+            set li[0]=0 //初始化循环
+            set li[1]=LoadInteger(udg_hs, GetItemTypeId(litem), 0) //读取是武器还是衣服
+            set li[2]=0 //判断装备的内置等级
+            loop
+                if GetItemType(UnitItemInSlot(u1, li[0])) == ITEM_TYPE_PERMANENT and GetItemLevel(UnitItemInSlot(u1, li[0])) == li[1] then
+                    set li[2]=LoadInteger(udg_hs, 25, GetItemTypeId(UnitItemInSlot(u1, li[0]))) //获取装备内置等级
+                    set li[0]=5
+                endif
+                exitwhen li[0] == 5
+                set li[0]=li[0] + 1
+            endloop
             call RemoveItem(litem)
-            call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, ti, li[0]), GetUnitX(u1), GetUnitY(u1)))
+            if li[2] > 0 and li[2] < 5 then
+                //在这里判读穷逼有没有足够的金币，没有就拒绝强化
+                call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, ti, li[2]), GetUnitX(u1), GetUnitY(u1)))
+            else
+                call DisplayTimedTextToPlayer(GetOwningPlayer(u1), 0, 0, 10, msg(1) + "你没有合适的装备能升级") //发送辣鸡消息
+            endif
         endif
-        if lv == 2 then
+        if lv == 2 then //二级属于真材实料，需要判断玩家是否材料齐全
             //目前如果玩家拾取到未注册的可购买类物品会崩溃，原因是死循环，因为未注册无法获取需要几个材料
             set li[0]=LoadInteger(udg_hs, ti, 0) //获取物品合成需要几个材料
             set li[1]=0 //初始化主循环
@@ -1291,6 +1676,7 @@ function getitem_1 takes nothing returns nothing
                     if GetItemTypeId(UnitItemInSlot(u1, li[2])) == LoadInteger(udg_hs, ti, li[1] + 1) then //判断单位是否有所需材料
                         call SaveItemHandle(udg_hs, StringHash("材料"), li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
                         set li[3]=li[3] + 1 //记录材料种类数量
+                        set li[2]=5
                         if li[1] == 0 then
                             set li[5]=GetItemTypeId(UnitItemInSlot(u1, li[2]))
                         endif
@@ -1311,8 +1697,8 @@ function getitem_1 takes nothing returns nothing
                 set li[9]=GetItemLevel(litem)
                 set li[10]=LoadInteger(udg_hs, li[8], li[9]) + 1
                 set li[11]=0 //判读是否具备升级条件
-                if GetItemType(litem) == ITEM_TYPE_PERMANENT and li[6] < 16 and ModuloInteger(li[6], 5) == 0 then
-                    if li[7] == li[10] then
+                if GetItemType(litem) == ITEM_TYPE_PERMANENT and li[6] < 16 and ModuloInteger(li[6], 5) == 0 and ( li[9] == 2 or li[9] == 1 ) then //只有武器和衣服需要判断经验来合成
+                    if li[7] <= li[10] then //判断经验是否足够
                     else
                     call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "材料已齐全，装备经验不足")
                     set li[11]=1 //拒绝升级
@@ -1340,6 +1726,73 @@ function getitem_1 takes nothing returns nothing
                 endif
             endif
             call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
+        endif
+        if lv == 3 then //三级五行强化
+            set li[0]=0 //初始化循环
+            set li[1]=0
+            loop
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == 'IB13' or GetItemTypeId(UnitItemInSlot(u1, li[0])) == 'IB2E' then
+                    set li[1]=GetItemTypeId(UnitItemInSlot(u1, li[0]))
+                    set li[3]=li[0]
+                    set li[0]=5
+                endif
+                exitwhen li[0] == 5
+                set li[0]=li[0] + 1
+            endloop
+            if li[1] != 0 then
+                set li[4]=GetRandomInt(1, 5)
+                call RemoveItem(UnitItemInSlot(u1, li[3]))
+                call RemoveItem(litem)
+                set litem=CreateItem(LoadInteger(udg_hs, li[1], li[4]), GetUnitX(u1), GetUnitY(u1))
+                call UnitAddItem(u1, litem)
+            endif
+        endif
+        if lv == 4 then //四级也是直接给
+            set li[1]=LoadInteger(udg_hs, GetItemTypeId(litem), 0)
+            set li[0]=0 //初始化循环
+            set li[2]=LoadInteger(udg_hs, GetItemTypeId(litem), 1)
+            loop
+                if GetItemTypeId(UnitItemInSlot(u1, li[0])) == li[1] then
+                    call RemoveItem(UnitItemInSlot(u1, li[0]))
+                    call RemoveItem(litem)
+                    call UnitAddItem(u1, CreateItem(li[2], GetUnitX(u1), GetUnitY(u1)))
+                    set li[0]=5
+                endif
+                exitwhen li[0] == 5
+                set li[0]=li[0] + 1
+            endloop
+        endif
+        if lv == 5 then //五级只有一个辣鸡
+            set li[0]='IB3Q'
+            set li[1]='IB3R'
+            set li[2]='IB3S'
+            set li[3]='IB3T'
+            set li[4]=0
+            set li[5]=0
+            set li[6]=0
+            loop
+                loop
+                    if GetItemTypeId(UnitItemInSlot(u1, li[5])) == li[li[4]] then
+                        set li[6]=li[6] + 1
+                        call SaveItemHandle(udg_hs, 10086, li[6], UnitItemInSlot(u1, li[5]))
+                        set li[5]=5
+                    endif
+                    exitwhen li[5] == 5
+                    set li[5]=li[5] + 1
+                endloop
+                exitwhen li[4] == 3
+                set li[4]=li[4] + 1
+                set li[5]=0
+            endloop
+            if li[6] == 4 then
+                set li[5]=0
+                loop
+                    exitwhen li[5] == 4
+                    set li[5]=li[5] + 1
+                    call RemoveItem(LoadItemHandle(udg_hs, 10086, li[5]))
+                endloop
+                call UnitAddItem(u1, CreateItem('IB2D', GetUnitX(u1), GetUnitY(u1)))
+            endif
         endif
     endif
     if GetItemType(litem) == ITEM_TYPE_CHARGED then //判断是否可充物品
@@ -1661,7 +2114,9 @@ function skill_1 takes nothing returns nothing
     local real array f
     local real s
     local timer t
-    set s=ql + qm + qz
+    local integer id=GetPlayerId(p1)
+    set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+    set s=s * ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] )
     if GetSpellAbilityId() == 'A00I' then //骑士之志
         set l__g=CreateGroup()
         set x=GetUnitX(u)
@@ -2156,6 +2611,15 @@ endfunction
     local unit unitt
     local integer loopli=0
     local trigger ttt
+    local integer m1
+    local integer tempint
+    //下面这些用来防止SLK工具优化的
+    set tempint='uAA0'
+    set tempint='uAA1'
+    set tempint='uAA2'
+    set tempint='uAA3'
+    set tempint='uAA4'
+    set tempint='uAA5'
     //初始化函数
     set udg_hs=InitHashtable()
     
@@ -3325,6 +3789,7 @@ endfunction
     call TriggerAddAction(ttt, function yg)
     call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
     
+    //保存掉落物品
     //暗夜洞穴
     call SaveInteger(udg_hs, 'UB00', 1, 'IB3Y')
     call SaveInteger(udg_hs, 'UB00', 2, 'IB3Z')
@@ -3941,10 +4406,6 @@ endfunction
     
     call CreateItem('IB41', 880, - 3840)
     
-    call CreateItem('IB42', 890, - 3840)
-    
-    call CreateItem('IB43', 900, - 3840)
-    
     call SetPlayerAbilityAvailable(Player(0), 'A001', false) //禁用所有天赋
     
     call SetPlayerAbilityAvailable(Player(0), 'A002', false) //禁用所有天赋
@@ -4558,18 +5019,162 @@ endfunction
     call SaveInteger(udg_hs, 'IB12', 2, 'IC1Z') //存储装备对应物品
     
     call SetMusicVolume(PercentToInt(50, 127))
-    //新手装备初始化
+    //等级1的可购买物品强化
+    //武器
+    call SaveInteger(udg_hs, 'IB3U', 0, 1)
     call SaveInteger(udg_hs, 'IB3U', 1, 'IC00')
-    call SaveInteger(udg_hs, 'IB3U', 2, 'IC0Y')
-    call SaveInteger(udg_hs, 'IB3V', 1, 'IC01')
+    call SaveInteger(udg_hs, 'IB3U', 2, 'IC01')
+    call SaveInteger(udg_hs, 'IB3U', 3, 'IC02')
+    call SaveInteger(udg_hs, 'IB3U', 4, 'IC03')
+    //衣服
+    call SaveInteger(udg_hs, 'IB3V', 0, 2)
+    call SaveInteger(udg_hs, 'IB3V', 1, 'IC0Y')
     call SaveInteger(udg_hs, 'IB3V', 2, 'IC0Z')
-    call SaveInteger(udg_hs, 'IB3W', 1, 'IC02')
-    call SaveInteger(udg_hs, 'IB3W', 2, 'IC10')
-    call SaveInteger(udg_hs, 'IB3X', 1, 'IC03')
-    call SaveInteger(udg_hs, 'IB3X', 2, 'IC11')
+    call SaveInteger(udg_hs, 'IB3V', 3, 'IC10')
+    call SaveInteger(udg_hs, 'IB3V', 4, 'IC11')
+    //等级4
+    call SaveInteger(udg_hs, 'IB3L', 0, 'IB2D')
+    call SaveInteger(udg_hs, 'IB3L', 1, 'IB2E')
+    call SaveInteger(udg_hs, 'IB3M', 0, 'IB2K')
+    call SaveInteger(udg_hs, 'IB3N', 0, 'IB2L')
+    call SaveInteger(udg_hs, 'IB3O', 0, 'IB2M')
+    call SaveInteger(udg_hs, 'IB3P', 0, 'IB2N')
+    
+    call SaveInteger(udg_hs, 'IB3M', 1, 'IB19')
+    call SaveInteger(udg_hs, 'IB3N', 1, 'IB1A')
+    call SaveInteger(udg_hs, 'IB3O', 1, 'IB1B')
+    call SaveInteger(udg_hs, 'IB3P', 1, 'IB1C')
+    
+    
+    
     //装备强化和合成初始化函数
-    call itemreg('IB04' , 1 , 'IB3Z' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC04' , 2 , true)
+    //暗夜蛛丝
+    call itemreg('IB1H' , 1 , 'IB3W' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC12' , 2 , true)
+    //锐利蛛尖
+    call itemreg('IB04' , 1 , 'IB3X' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC04' , 2 , true)
+    //蛇龙皮
+    call itemreg('IB1M' , 1 , 'IB3Y' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC17' , 2 , true)
+    //蛇龙尖牙
+    call itemreg('IB09' , 1 , 'IB3Z' , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 'IC09' , 2 , true)
+    //龙之利爪
+    call itemreg('IB0E' , 1 , 'IB3H' , 1 , 'IB3I' , 1 , 'IB3J' , 1 , 'IB3K' , 1 , 0 , 0 , 'IC0E' , 5 , true)
+    //龙之鳞甲
     call itemreg('IB1R' , 1 , 'IB3D' , 1 , 'IB3E' , 1 , 'IB3F' , 1 , 'IB3G' , 1 , 0 , 0 , 'IC1C' , 5 , true)
+    //斗者项链
+    call SaveInteger(udg_hs, 'IB2E', 1, 'IB2F')
+    call SaveInteger(udg_hs, 'IB2E', 2, 'IB2G')
+    call SaveInteger(udg_hs, 'IB2E', 3, 'IB2H')
+    call SaveInteger(udg_hs, 'IB2E', 4, 'IB2I')
+    call SaveInteger(udg_hs, 'IB2E', 5, 'IB2J')
+    //火焰护手
+    call SaveInteger(udg_hs, 'IB13', 1, 'IB14')
+    call SaveInteger(udg_hs, 'IB13', 2, 'IB15')
+    call SaveInteger(udg_hs, 'IB13', 3, 'IB16')
+    call SaveInteger(udg_hs, 'IB13', 4, 'IB17')
+    call SaveInteger(udg_hs, 'IB13', 5, 'IB18')
+    
+    set vx[0]=1
+    set zx[0]=1
+    set cx[0]=1
+    set yx[0]=1
+    set fx[0]=1
+    set m[0]=GetRandomInt(- 50, 50)
+    set m[6]=m[0]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0], 4052366646 + m[0])
+    
+    set vx[1]=1
+    set zx[1]=1
+    set cx[1]=1
+    set yx[1]=1
+    set fx[1]=1
+    set m[1]=GetRandomInt(- 50, 50)
+    set m[6]=m[1]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[1] + StringHash(GetPlayerName(Player(1))), m[1], 4052366646 + m[1])
+    
+    set vx[2]=1
+    set zx[2]=1
+    set cx[2]=1
+    set yx[2]=1
+    set fx[2]=1
+    set m[2]=GetRandomInt(- 50, 50)
+    set m[6]=m[2]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[2] + StringHash(GetPlayerName(Player(2))), m[2], 4052366646 + m[2])
+    
+    set vx[3]=1
+    set zx[3]=1
+    set cx[3]=1
+    set yx[3]=1
+    set fx[3]=1
+    set m[3]=GetRandomInt(- 50, 50)
+    set m[6]=m[3]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[3] + StringHash(GetPlayerName(Player(3))), m[3], 4052366646 + m[3])
+    
+    set vx[4]=1
+    set zx[4]=1
+    set cx[4]=1
+    set yx[4]=1
+    set fx[4]=1
+    set m[4]=GetRandomInt(- 50, 50)
+    set m[6]=m[4]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[4] + StringHash(GetPlayerName(Player(4))), m[4], 4052366646 + m[4])
+    
+    set vx[5]=1
+    set zx[5]=1
+    set cx[5]=1
+    set yx[5]=1
+    set fx[5]=1
+    set m[5]=GetRandomInt(- 50, 50)
+    set m[6]=m[5]
+    set m[7]=- 50
+    loop
+        exitwhen m[7] == m[6]
+        set m[7]=m[7] + 1
+    endloop
+    call SaveInteger(udg_hs, m[5] + StringHash(GetPlayerName(Player(5))), m[5], 4052366646 + m[5])
+    
+    set lgf[0]=0
+    set lgf[6]=0
+    set lgf[12]=0
+    set lgf[1]=0
+    set lgf[7]=0
+    set lgf[13]=0
+    set lgf[2]=0
+    set lgf[8]=0
+    set lgf[14]=0
+    set lgf[3]=0
+    set lgf[9]=0
+    set lgf[15]=0
+    set lgf[4]=0
+    set lgf[10]=0
+    set lgf[16]=0
+    set lgf[5]=0
+    set lgf[11]=0
+    set lgf[17]=0
     
     set ttt=null
     endfunction 
@@ -4588,6 +5193,7 @@ endfunction
         call bgj() //注册被攻击事件
         call death() //注册死亡事件
         call skill() //注册发动技能效果事件
+        call sywp() //注册任意单位使用物品
     endfunction
 
 //library csh ends
@@ -4597,7 +5203,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Wed Jun 13 16:20:17 2018
+//   Date: Sat Jun 16 07:21:30 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================
@@ -4607,21 +5213,6 @@ endfunction
 //*
 //***************************************************************************
 function InitGlobals takes nothing returns nothing
-endfunction
-//***************************************************************************
-//*
-//*  Items
-//*
-//***************************************************************************
-function CreateAllItems takes nothing returns nothing
-    local integer itemID
-    call CreateItem('IB0Z', 433.3, - 4900.9)
-    call CreateItem('IB1R', 1098.7, - 4703.1)
-    call CreateItem('IB3D', 1086.0, - 4790.4)
-    call CreateItem('IB3E', 1082.4, - 4871.3)
-    call CreateItem('IB3F', 1073.0, - 4939.9)
-    call CreateItem('IB3G', 1071.9, - 5009.9)
-    call CreateItem('IC00', 745.1, - 4899.5)
 endfunction
 //***************************************************************************
 //*
@@ -4708,7 +5299,6 @@ function main takes nothing returns nothing
     call SetAmbientDaySound("CityScapeDay")
     call SetAmbientNightSound("CityScapeNight")
     call SetMapMusic("Music", true, 0)
-    call CreateAllItems()
     call InitBlizzard()
 
 call ExecuteFunc("csh__init")

@@ -19,14 +19,38 @@ function sys_cg takes nothing returns nothing
         endloop
     set g=g-1
     set unitt=null
+
 endfunction
 
 
 function time1s takes nothing returns nothing
+    local integer li0=0
+    local integer li1
+    local real x=-4480
+    local real y=-4480
+    local unit u
     set i=i+1
     if g>0 then
         call sys_cg()
     endif
+    loop
+        if lgf[li0]==1 then//前六位表示开启刷怪
+            if lgf[li0+6]<5 then//中间六位表示练功房怪物不足
+                set li1=0
+                loop
+                    exitwhen li1==20
+                    set li1=li1+1
+                    set u= CreateUnit(Player(11),lgf[li0+12],x,y,225)//末六位表示刷出的怪
+                    call SaveInteger(udg_hs,GetHandleId(u),666,li0)
+                endloop
+                set lgf[li0+6]=lgf[li0+6]+20
+            endif
+        endif
+        exitwhen li0==5
+        set li0=li0+1
+        set y=y+1792
+    endloop
+    set u=null
 endfunction
 
 function xzndjsq takes nothing returns nothing
@@ -53,8 +77,12 @@ function time0_1 takes nothing returns nothing
     local string array str
     call TimerStart(lti,1,true, function time1s)//启动难度选择时限计时器
 
-
-
+    call BJDebugMsg(I2S(m[0]))
+    call BJDebugMsg(I2S(StringHash(GetPlayerName(Player(0)))))
+    call BJDebugMsg(I2S(StringHash("0")))
+    call BJDebugMsg(I2S(LoadInteger(udg_hs,m[0]+StringHash(GetPlayerName(Player(0))),m[0])))
+    
+    
     set lti=null
     set dhk=DialogCreate()
     call DialogSetMessage(dhk,"选择难度")

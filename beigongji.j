@@ -19,8 +19,10 @@ function bgj_1 takes nothing returns nothing
     local real x=GetUnitX(u1)
     local real y=GetUnitY(u1)
     local real s//伤害
-    /*
-    set s=ql+qm+qz
+    local integer id=GetPlayerId(GetOwningPlayer(u))
+    //伤害系数在这里设置
+    set s= (ll+lm+lz)*0.4+(bl+bm+bz)*0.2
+    set s=s*(vx[id]+zx[id]+cx[id]+yx[id]+fx[id])
     call GroupEnumUnitsInRange(g,x,y,600,null)
     loop
         set u2=FirstOfGroup(g)
@@ -32,7 +34,6 @@ function bgj_1 takes nothing returns nothing
             call GroupRemoveUnit(g,u2)
     endloop
     call DestroyGroup(g)
-    */
     set g=null
     set u=null
     set u1=null

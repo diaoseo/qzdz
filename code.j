@@ -78,9 +78,10 @@ end
 #include "death.j"
 #include "skill.j"
 #include "cf.j"
+#include "sywp.j"
 
 //导入完毕
-library csh initializer init requires libselecthero libinput libfuhuo libtime0 libchuguai libyg libbgj libdeath libskill
+library csh initializer init requires libselecthero libinput libfuhuo libtime0 libchuguai libyg libbgj libdeath libskill libsywp
 globals
 //                   _ooOoo_ 
 //                  o8888888o 
@@ -108,6 +109,13 @@ globals
     integer b=0//记录游戏第几波
     integer g=0//用来设置每波多少个怪
     real jsqjg=20//默认计时器间隔
+    real array vx
+    real array cx
+    real array zx
+    real array yx
+    real array fx
+    integer array m
+    integer array lgf    
 endglobals
 
     function itemreg takes integer id1,integer n1,integer id2,integer n2,integer id3,integer n3,integer id4,integer n4,integer id5,integer n5,integer id6,integer n6,integer id7 ,integer n7,boolean bo returns nothing
@@ -157,6 +165,15 @@ endglobals
     local unit unitt
     local integer loopli =0
     local trigger ttt
+    local integer m1
+    local integer tempint
+    //下面这些用来防止SLK工具优化的
+    set tempint='uAA0'
+    set tempint='uAA1'
+    set tempint='uAA2'
+    set tempint='uAA3'
+    set tempint='uAA4'
+    set tempint='uAA5'
     //初始化函数
     set udg_hs=InitHashtable()
     <?
@@ -309,7 +326,7 @@ endglobals
     local hagip={8.4,4.8,6.6,14.4,6,7.2,16.2,9.9,10.8,18,13.5,9,13.5,20.7,31.5,22.5,16.5}
     local hintp={7.2,10.2,6.6,6.6,12,13.8,6.3,9.9,10.8,5.4,7.2,22.5,10.8,9.9,13.5,21,36}
     local hspd={280,280,280,280,280,280,280,295,295,295,295,295,310,310,310,310,310}
-    local hmiss={"","","","","","Abilities\\Weapons\\FarseerMissile\\FarseerMissile.mdl","Abilities\\Weapons\\MoonPriestessMissile\\MoonPriestessMissile.mdl","","Abilities\\Weapons\\BloodElfSpellThiefMISSILE\\BloodElfSpellThiefMISSILE.mdl","Abilities\\Weapons\\MoonPriestessMissile\\MoonPriestessMissile.mdl","","Abilities\\Weapons\\BloodElfMissile\\BloodElfMissile.mdl","","","","","Abilities\\Weapons\\DruidoftheTalonMissile\\DruidoftheTalonMissile.mdl"}
+    local hmiss={'','','','','','Abilities\\Weapons\\FarseerMissile\\FarseerMissile.mdl','Abilities\\Weapons\\MoonPriestessMissile\\MoonPriestessMissile.mdl','','Abilities\\Weapons\\BloodElfSpellThiefMISSILE\\BloodElfSpellThiefMISSILE.mdl','Abilities\\Weapons\\Rifle\\RifleImpact.mdl','','Abilities\\Weapons\\BloodElfMissile\\BloodElfMissile.mdl','','','','','Abilities\\Weapons\\DruidoftheTalonMissile\\DruidoftheTalonMissile.mdl'}
     local qxw={1,1,1,1,1,1,1,2,3,4,5,11,12,13,21,22,23}
     local hskill={'AInv,A01H,A01I,A000,A00G,A00H,A00I,A00J','AInv,A01H,A01I,A000,A00G,A00H,A00K,A00L','AInv,A01H,A01I,A000,A00G,A00H,A00M,A00N','AInv,A01H,A01I,A000,A00G,A00H,A00O,A00P','AInv,A01H,A01I,A000,A00G,A00H,A00Q,A00R,A00S','AInv,A01H,A01I,A000,A00G,A00H,A00T,A00U','AInv,A01H,A01I,A000,A00G,A00H,A00V,A00W','AInv,A01H,A01I,A000,A00G,A00H,A00X,A00Y','AInv,A01H,A01I,A000,A00G,A00H,A00Z,A010','AInv,A01H,A01I,A000,A00G,A00H,A011,A012','AInv,A01H,A01I,A000,A00G,A00H,A013,A014','AInv,A01H,A01I,A000,A00G,A00H,A015,A016','AInv,A01H,A01I,A000,A00G,A00H,A017,A018','AInv,A01H,A01I,A000,A00G,A00H,A019,A01A','AInv,A01H,A01I,A000,A00G,A00H,A01B,A01C','AInv,A01H,A01I,A000,A00G,A00H,A01D,A01E','AInv,A01H,A01I,A000,A00G,A00H,A01F,A01G'}
     local uid=806111
@@ -374,7 +391,7 @@ endglobals
     ad.Researches=yjkj[id]
     end
 
-    local ad=slk.unit.nfbr:new(changeu(809999))--创建一个基地
+    local ad=slk.unit.nfbr:new(changeu(809999))--创建一个助手
     ad.name='助手'
     ad.race='human'
     ad.spd=522
@@ -388,6 +405,8 @@ endglobals
     ad.spd=0
     ad.HP=5000
     ad.upgrades='RA01'
+    ad.Sellitems='I001'
+    ad.abilList='Aneu,Apit'
     ?>
     set unitt= CreateUnit(Player(6),'<?=ad.get_id()?>',0,-3840,90)//创建基地
     call SaveUnitHandle(udg_hs,0,StringHash("基地"),unitt)
@@ -395,8 +414,9 @@ endglobals
 
     uid=808704
     local npcx={253,-256,768,-768,1280,-1280,1792,-1792,}
-    local npcname={'新手商店','副本','将魂','异域','荣誉殿','专属装备','翅膀','成就兑换',}
-    local npcfm={'IB00,IB1D,IB2C,IB3U,IB3V,IB3W,IB3X','IA0C,IA0G,IA0K,IA0O,IA0S,IA0T,IA0U,IA0V,IA0X,IA0W','IA13,IA14,IA15,IA16,IA17','IA0Y','','','',''}
+    local npcname={'新手商店','副本','将魂','异域','荣誉殿','专属装备','翅膀','成就兑换'}
+    local npcmods={'units\\human\\HeroPaladin\\HeroPaladin','units\\human\\HeroArchMage\\HeroArchMage','units\\other\\HeroArchMageGhost\\HeroArchMageGhost','units\\orc\\Shaman\\Shaman','units\\undead\\Tichondrius\\Tichondrius','Units\\Creeps\\HeroGoblinAlchemist\\HeroGoblinAlchemist','units\\naga\\HeroNagaSeawitch\\HeroNagaSeawitch','units\\orc\\HeroShadowHunter\\HeroShadowHunter'}
+    local npcfm={'IB00,IB1D,IB2C,IB3U,IB3V','IA0C,IA0G,IA0K,IA0O,IA0S,IA0T,IA0U,IA0V,IA0X,IA0W','IA13,IA14,IA15,IA16,IA17','IA0Y','','','',''}
     --创建NPC
     for x=1,8 do
     local ad=slk.unit.nfbr:new(changeu(uid+x))
@@ -406,6 +426,7 @@ endglobals
     ad.spd=0
     ad.abilList='Aneu,Apit'
     ad.Sellitems=npcfm[x]
+    ad.file=npcmods[x]
     ?>
     set unitt= CreateUnit(Player(6),'<?=ad.get_id()?>',<?=npcx[x]?>,-4608,90)//创建npc
     call SetUnitInvulnerable(unitt,true)//设置无敌
@@ -484,6 +505,7 @@ endglobals
 
 
     ?>
+    //保存掉落物品
     //暗夜洞穴
     call SaveInteger(udg_hs,'UB00',1,'IB3Y')
     call SaveInteger(udg_hs,'UB00',2,'IB3Z')
@@ -684,6 +706,8 @@ endglobals
     ad.race='human'
     ad.isbldg=1
     ad.spd=0
+    ad.Sellitems='IBA0,IBA1,IBA2,IBA3,IBA4,IBA5'
+    ad.abilList='Aneu,Apit'
     for x=1,6 do
 
 
@@ -694,16 +718,16 @@ endglobals
 
     set unitt=null
     <?
-    local iskill={'AA00,AB00,AC00','AA01,AB01,AC01','AA02,AB02,AC02','AA03,AB03,AC03','AA04,AB04,AC04','AA05,AB05,AC05','AA06,AB06,AC06','AA07,AB07,AC07','AA08,AB08,AC08','AA09,AB09,AC09','AA0A,AB0A,AC0A','AA0B,AB0B,AC0B','AA0G,AB0H,AC0C','AA0I,AB0I,AC0D','AA0O,AB0O,AC0E','AA12,AB0P,AC0F','AA13,AB0Q,AC0G','AA14,AB0R,AC0H','AA15,AB0S,AC0I','AA16,AB0T,AC0J','AA17,AB0U,AC0K','AA18,AB0V,AC0L','AA19,AB0W,AC0M','AA1A,AB0X,AC0N','AA1B,AB0Y,AC0O','AA1C,AB0Z,AC0P','AA1D,AB10,AC0Q','AA1E,AB11,AC0R','AA1F,AB12,AC0S','AA1G,AB13,AC0T','AA1H,AB14,AC0U','AA1I,AB15,AC0V','AA1J,AB16,AC0W','AA1K,AB17,AC0X','AA1L,AB18,AC0Y','AA0Q,AB0C,AC0Z,AD0F','AA0S,AB0D,AC10,AD0H','AA0U,AB0E,AC11,AD0I','AA0V,AB0F,AC12,AD0J','AA0W,AB0G,AC13,AD0K','AA0X,AB0J,AC14,AD0L','AA0Y,AB0K,AC15,AD0M','AA0Z,AB0L,AC16,AD0N','AA11,AB0M,AC17,AD0O','AA10,AB0N,AC18,AD0P','AA0J,AC19,AF0K','AA0K,AC1A,AF0L','AA0L,AC1B,AF0M','AA0M,AC1C,AF0N','AD00,AF00','AD01,AF01','AD02,AF02','AD03,AF03','AD04,AF04','AD05,AF05,AG00','AD06,AF06,AG01','AD07,AF07,AG02','AD08,AF08,AG03','AD09,AF0A,AG04','AD0A,AF0B,AG05','AD0B,AF0C,AG06','AD0C,AF0D,AG07','AD0D,AF0E,AG08','AD0E,AF0O,AG0A','AD0Q,AF0X','AD0R,AF0Y','AD0S,AF0Z','AD0T,AF10','AD0U,AF11','AD0V,AF12,AG10','AD0W,AF13,AG11','AD0X,AF14,AG12','AD0Y,AF15,AG13','AD0Z,AF16,AG14','AD10,AF17,AG15','AD11,AF18,AG16','AD12,AF19,AG17','AD13,AF1A,AG18','AD14,AF1B,AG19','AD15,AF1C,AG1A','AD16,AF1D,AG1B','AD17,AF1E,AG1C','AD18,AF1F,AG1D','AD19,AF1G,AG1E','AC1D,AF09,AG09','AC1E','AA0H,AC1F,AF0F,AG0B','AC1G,AF0Q','AC1H,AF0V','AC1I,AF0R','AA0N,AC1J,AF0S','AC1K,AF0T','AA0C,AC1L,AF0G','AA0D,AC1M,AF0H','AA0E,AC1N,AF0I','AA0F,AC1O,AF0J','AC1P,AF0U','AA0R,AC1Q','AA0P,AC1R','AC1S','AC1T,AD0G','AC1U,AF0P,AG0C','AC1V','AC1W,AF0W,AG1F','AA0T,AC1X','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',''}
-    local iname={'初云短泉剑+1','初云短泉剑+2','初云短泉剑+3','初云短泉剑+4','初云短泉剑+Max','锐利妖金剑+1','锐利妖金剑+2','锐利妖金剑+3','锐利妖金剑+4','锐利妖金剑+Max','蛇龙破羽剑+1','蛇龙破羽剑+2','蛇龙破羽剑+3','蛇龙破羽剑+4','蛇龙破羽剑+Max','龙威妖韫剑','龙威妖韫剑+2','龙威妖韫剑+3','龙威妖韫剑+4','龙威妖韫剑+5','龙威妖韫剑+6','龙威妖韫剑+7','龙威妖韫剑+8','龙威妖韫剑+9','龙威妖韫剑+10','龙威妖韫剑+11','龙威妖韫剑+12','龙威妖韫剑+13','龙威妖韫剑+14','龙威妖韫剑+15','龙威妖韫剑+16','龙威妖韫剑+17','龙威妖韫剑+18','龙威妖韫剑+19','龙威妖韫剑+20','怒焰护手+1','怒焰护手+2','怒焰护手+3','怒焰护手+4','怒焰护手max','怒焰护手-金','怒焰护手-木','怒焰护手-水','怒焰护手-火','怒焰护手-土','青龙护符-附魂','白虎护符-附魂','玄武护符-附魂','朱雀护符-附魂','初云宝砂衣+1','初云宝砂衣+2','初云宝砂衣+3','初云宝砂衣+4','初云宝砂衣+Max','蛛丝纯骨甲+1','蛛丝纯骨甲+2','蛛丝纯骨甲+3','蛛丝纯骨甲+4','蛛丝纯骨甲+Max','蛇龙冥魄甲+1','蛇龙冥魄甲+2','蛇龙冥魄甲+3','蛇龙冥魄甲+4','蛇龙冥魄甲+Max','龙鳞幽火甲','龙鳞幽火甲+2','龙鳞幽火甲+3','龙鳞幽火甲+4','龙鳞幽火甲+5','龙鳞幽火甲+6','龙鳞幽火甲+7','龙鳞幽火甲+8','龙鳞幽火甲+9','龙鳞幽火甲+10','龙鳞幽火甲+11','龙鳞幽火甲+12','龙鳞幽火甲+13','龙鳞幽火甲+14','龙鳞幽火甲+15','龙鳞幽火甲+16','龙鳞幽火甲+17','龙鳞幽火甲+18','龙鳞幽火甲+19','龙鳞幽火甲+20','疾行之靴','黯淡的斗者项链','斗者项链','斗者项链-金','斗者项链-木','斗者项链-水','斗者项链-火','斗者项链-土','青龙护符','白虎护符','玄武护符','朱雀护符','女娲石','崆峒印','昆仑镜','东皇钟','昊天塔','炼妖壶','无字天书','神农鼎','伏羲琴','幸运护符','1级恢复药水','2级恢复药水','3级恢复药水','4级恢复药水','一级宝箱','二级宝箱','三级宝箱','四级宝箱','五级宝箱','竞技场刷新符','宝箱盒','黯淡的斗者意志','绚丽的斗者意志','斗魂卷轴','斗者宝石','龙之鳞甲1','龙之鳞甲2','龙之鳞甲3','龙之鳞甲4','龙之利爪1','龙之利爪2','龙之利爪3','龙之利爪4','日落山泉','青龙魂','白虎魂','玄武魂','朱雀魂','斗者项链碎片1','斗者项链碎片2','斗者项链碎片3','斗者项链碎片4','新手装备升到2级','新手装备升到3级','新手装备升到4级','新手装备升到5级','暗夜蛛丝','锐利蛛尖','蛇龙皮','蛇龙尖牙','蛇龙胆','蜘蛛之血',}
-    local iart={'ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_88.tga','ReplaceableTextures\\CommandButtons\\BTNA_73.tga','ReplaceableTextures\\CommandButtons\\BTNA_70.tga','ReplaceableTextures\\CommandButtons\\BTNA_64.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_71.tga','ReplaceableTextures\\CommandButtons\\BTNA_61.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_88.tga','ReplaceableTextures\\CommandButtons\\BTNA_73.tga','ReplaceableTextures\\CommandButtons\\BTNA_70.tga','ReplaceableTextures\\CommandButtons\\BTNA_64.tga','ReplaceableTextures\\CommandButtons\\BTNA_49.tga','ReplaceableTextures\\CommandButtons\\BTNA_51.tga','ReplaceableTextures\\CommandButtons\\BTNA_59.tga','ReplaceableTextures\\CommandButtons\\BTNBoneChimes.blp','ReplaceableTextures\\CommandButtons\\BTNControlMagic.blp','ReplaceableTextures\\CommandButtons\\BTNA_66.tga','ReplaceableTextures\\CommandButtons\\BTNA_57.tga','ReplaceableTextures\\CommandButtons\\BTNCallToArms.blp','ReplaceableTextures\\CommandButtons\\BTNA_44.tga','ReplaceableTextures\\CommandButtons\\BTNA_52.tga','ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp','ReplaceableTextures\\CommandButtons\\BTNPotionGreen.tga','ReplaceableTextures\\CommandButtons\\BTNPotionPurple.tga','ReplaceableTextures\\CommandButtons\\BTNPotionOfRestoration.blp','ReplaceableTextures\\CommandButtons\\BTNA_40.tga','ReplaceableTextures\\CommandButtons\\BTNA_42.tga','ReplaceableTextures\\CommandButtons\\BTNA_41.tga','ReplaceableTextures\\CommandButtons\\BTNA_48.tga','ReplaceableTextures\\CommandButtons\\BTNA_43.tga','ReplaceableTextures\\CommandButtons\\BTNA_74.tga','ReplaceableTextures\\CommandButtons\\BTNUrnOfKelThuzad.blp','ReplaceableTextures\\CommandButtons\\BTNA_62.tga','ReplaceableTextures\\CommandButtons\\BTNA_75.tga','ReplaceableTextures\\CommandButtons\\BTNA_56.tga','ReplaceableTextures\\CommandButtons\\BTNA_55.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_58.tga','ReplaceableTextures\\CommandButtons\\BTNA_87.tga','ReplaceableTextures\\CommandButtons\\BTNA_72.tga','ReplaceableTextures\\CommandButtons\\BTNA_69.tga','ReplaceableTextures\\CommandButtons\\BTNA_63.tga','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNA_60.tga','ReplaceableTextures\\CommandButtons\\BTNA_86.tga','ReplaceableTextures\\CommandButtons\\BTNA_78.tga','ReplaceableTextures\\CommandButtons\\BTNA_77.tga','ReplaceableTextures\\CommandButtons\\BTNA_80.tga','ReplaceableTextures\\CommandButtons\\BTNA_82.tga'}
-    local iutip={'新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可用材料锐利蛛尖升级为锐利妖金剑','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可用材料蛇龙尖牙升级为蛇龙破羽剑','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可用材料龙之利爪1-4升级为龙威妖韫剑','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','附魂护符，+全属性+攻击力+生命值','附魂护符，+敏捷+攻击速度+吸血','附魂护符，+力量+护甲+生命值','附魂护符，+智力+法术等级；被动技能：周围600码的敌人受到朱雀火焰灼烧；','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可用材料暗夜蛛丝升级为蛛丝纯骨甲','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可用材料蛇龙皮升级为蛇龙冥魄甲','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可用材料龙之鳞甲1-4升级为龙鳞幽火甲','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','鞋子，+移动速度100，+护甲','凡器，+生命值，+全属性；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','护符，+全属性+攻击力+生命值','护符，+敏捷+攻击速度+吸血','护符，+力量+护甲+生命值','护符，+智力+法术等级；被动技能：周围600码的敌人受到朱雀火焰灼烧；','宝器，+全属性，+生命值；无限复活','宝器，+全属性，+攻击力；群体变羊术持续3秒','宝器，+20%物理闪避，+攻击力； 驱除召唤和分身，CD60秒','宝器，+全属性；周围每秒减生命值各1%；能召唤圣泉（圣泉周围300码的友军获得每秒回血）','宝器，+全属性，+生命值；带天神下凡技能持续10秒，CD60秒','宝器，+全属性；单体减攻速及攻击并且造成每秒伤害 持续10秒,CD60秒','宝器，+全属性，+护甲，+生命值；抵抗眩晕效果。','宝器，+全属性，+生命值；被动效果每秒回血1%','宝器，+全属性，远程英雄攻击力提升100%；40%几率造成自身XX倍伤害','欧洲人附体，提升物品掉率20%','恢复自身5000生命值','恢复自身20000生命值','恢复自身100000生命值','恢复自身50%生命值','一级宝箱，开出随机宝器的几率为80%','二级宝箱，开出随机宝器的几率为85%','三级宝箱，开出随机宝器的几率为90%','四级宝箱，70%几率开出随机宝器，15%几率开出1级神器，10%几率获得2级神器，5%几率获得3级神器；','五级宝箱：55%几率开出随机宝器，20%几率开出1级神器，15%几率获得2级神器，10%几率获得3级神器；','刷新竞技场所有关卡','获得1-3级宝箱的概率为72%，获得4-5级宝箱的概率为28%','可以使斗者意志技能的经验值增加100点','可以使斗者意志技能的经验值增加500点','获得一个额外的斗魂点但不能超出上限。','宝石，可通过杀怪获得随机属性（金木水火土）','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','可以将黯淡的斗者之心洗涤为斗者之心','可以将魂魄附在护符上，增强属性；青龙魂+青龙护符=青龙护符-附魂','可以将魂魄附在护符上，增强属性；白虎魂+白虎护符=白虎护符-附魂','可以将魂魄附在护符上，增强属性；玄武魂+玄武护符=玄武护符-附魂','可以将魂魄附在护符上，增强属性；朱雀魂+朱雀护符=朱雀护符-附魂','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','','','','','暗夜蛛丝+初云宝砂衣max=蛛丝纯骨甲','锐利蛛尖+初云短泉剑max=锐利妖金剑','蛇龙皮+蛛丝纯骨甲max=蛇龙冥魄甲','蛇龙尖牙+锐利妖金剑max=蛇龙破羽剑','提升蛇龙冥魄甲与蛇龙破羽剑的装备经验50点。','提升蛛丝纯骨甲与锐利妖金剑的装备经验30点。'}
-    local itype={'Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Artifact','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Charged','Charged','Charged','Charged','Charged','Charged','Charged','Charged','Charged','PowerUp','PowerUp','PowerUp','PowerUp','PowerUp','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Charged','Charged'}
-    local izdsy={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-    local isycs={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-    local ilv={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,4,4,4,4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,5,5,5,5,5,5,5,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,2,2,2,2,1,1}
+    local iskill={'AA00,AB00,AC00','AA01,AB01,AC01','AA02,AB02,AC02','AA03,AB03,AC03','AA04,AB04,AC04','AA05,AB05,AC05','AA06,AB06,AC06','AA07,AB07,AC07','AA08,AB08,AC08','AA09,AB09,AC09','AA0A,AB0A,AC0A','AA0B,AB0B,AC0B','AA0G,AB0H,AC0C','AA0I,AB0I,AC0D','AA0O,AB0O,AC0E','AA12,AB0P,AC0F','AA13,AB0Q,AC0G','AA14,AB0R,AC0H','AA15,AB0S,AC0I','AA16,AB0T,AC0J','AA17,AB0U,AC0K','AA18,AB0V,AC0L','AA19,AB0W,AC0M','AA1A,AB0X,AC0N','AA1B,AB0Y,AC0O','AA1C,AB0Z,AC0P','AA1D,AB10,AC0Q','AA1E,AB11,AC0R','AA1F,AB12,AC0S','AA1G,AB13,AC0T','AA1H,AB14,AC0U','AA1I,AB15,AC0V','AA1J,AB16,AC0W','AA1K,AB17,AC0X','AA1L,AB18,AC0Y','AA0Q,AB0C,AC0Z,AD0F','AA0S,AB0D,AC10,AD0H','AA0U,AB0E,AC11,AD0I','AA0V,AB0F,AC12,AD0J','AA0W,AB0G,AC13,AD0K','AA0X,AB0J,AC14,AD0L','AA0Y,AB0K,AC15,AD0M','AA0Z,AB0L,AC16,AD0N','AA11,AB0M,AC17,AD0O','AA10,AB0N,AC18,AD0P','AA0J,AC19,AF0K','AA0K,AC1A,AF0L','AA0L,AC1B,AF0M','AA0M,AC1C,AF0N','AD00,AF00','AD01,AF01','AD02,AF02','AD03,AF03','AD04,AF04','AD05,AF05,AG00','AD06,AF06,AG01','AD07,AF07,AG02','AD08,AF08,AG03','AD09,AF0A,AG04','AD0A,AF0B,AG05','AD0B,AF0C,AG06','AD0C,AF0D,AG07','AD0D,AF0E,AG08','AD0E,AF0O,AG0A','AD0Q,AF0X','AD0R,AF0Y','AD0S,AF0Z','AD0T,AF10','AD0U,AF11','AD0V,AF12,AG10','AD0W,AF13,AG11','AD0X,AF14,AG12','AD0Y,AF15,AG13','AD0Z,AF16,AG14','AD10,AF17,AG15','AD11,AF18,AG16','AD12,AF19,AG17','AD13,AF1A,AG18','AD14,AF1B,AG19','AD15,AF1C,AG1A','AD16,AF1D,AG1B','AD17,AF1E,AG1C','AD18,AF1F,AG1D','AD19,AF1G,AG1E','AC1D,AF09,AG09','AC1E','AA0H,AC1F,AF0F,AG0B','AC1G,AF0Q','AC1H,AF0V','AC1I,AF0R','AA0N,AC1J,AF0S','AC1K,AF0T','AA0C,AC1L,AF0G','AA0D,AC1M,AF0H','AA0E,AC1N,AF0I','AA0F,AC1O,AF0J','AC1P,AF0U','AA0R,AC1Q','AA0P,AC1R','AC1S','AC1T,AD0G','AC1U,AF0P,AG0C','AC1V','AC1W,AF0W,AG1F','AA0T,AC1X','','A01T','A01T','A01T','A01T','A01T','A01T','A01T','A01T','A01T','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','A01T','A01T'}
+    local iname={'初云短泉剑+1','初云短泉剑+2','初云短泉剑+3','初云短泉剑+4','初云短泉剑+Max','锐利妖金剑+1','锐利妖金剑+2','锐利妖金剑+3','锐利妖金剑+4','锐利妖金剑+Max','蛇龙破羽剑+1','蛇龙破羽剑+2','蛇龙破羽剑+3','蛇龙破羽剑+4','蛇龙破羽剑+Max','龙威妖韫剑','龙威妖韫剑+2','龙威妖韫剑+3','龙威妖韫剑+4','龙威妖韫剑+5','龙威妖韫剑+6','龙威妖韫剑+7','龙威妖韫剑+8','龙威妖韫剑+9','龙威妖韫剑+10','龙威妖韫剑+11','龙威妖韫剑+12','龙威妖韫剑+13','龙威妖韫剑+14','龙威妖韫剑+15','龙威妖韫剑+16','龙威妖韫剑+17','龙威妖韫剑+18','龙威妖韫剑+19','龙威妖韫剑+20','怒焰护手+1','怒焰护手+2','怒焰护手+3','怒焰护手+4','怒焰护手max','怒焰护手-金','怒焰护手-木','怒焰护手-水','怒焰护手-火','怒焰护手-土','青龙护符-附魂','白虎护符-附魂','玄武护符-附魂','朱雀护符-附魂','初云宝砂衣+1','初云宝砂衣+2','初云宝砂衣+3','初云宝砂衣+4','初云宝砂衣+Max','蛛丝纯骨甲+1','蛛丝纯骨甲+2','蛛丝纯骨甲+3','蛛丝纯骨甲+4','蛛丝纯骨甲+Max','蛇龙冥魄甲+1','蛇龙冥魄甲+2','蛇龙冥魄甲+3','蛇龙冥魄甲+4','蛇龙冥魄甲+Max','龙鳞幽火甲','龙鳞幽火甲+2','龙鳞幽火甲+3','龙鳞幽火甲+4','龙鳞幽火甲+5','龙鳞幽火甲+6','龙鳞幽火甲+7','龙鳞幽火甲+8','龙鳞幽火甲+9','龙鳞幽火甲+10','龙鳞幽火甲+11','龙鳞幽火甲+12','龙鳞幽火甲+13','龙鳞幽火甲+14','龙鳞幽火甲+15','龙鳞幽火甲+16','龙鳞幽火甲+17','龙鳞幽火甲+18','龙鳞幽火甲+19','龙鳞幽火甲+20','疾行之靴','黯淡的斗者项链','斗者项链','斗者项链-金','斗者项链-木','斗者项链-水','斗者项链-火','斗者项链-土','青龙护符','白虎护符','玄武护符','朱雀护符','女娲石','崆峒印','昆仑镜','东皇钟','昊天塔','炼妖壶','无字天书','神农鼎','伏羲琴','幸运护符','1级恢复药水','2级恢复药水','3级恢复药水','4级恢复药水','一级宝箱','二级宝箱','三级宝箱','四级宝箱','五级宝箱','竞技场刷新符','宝箱盒','黯淡的斗者意志','绚丽的斗者意志','斗魂卷轴','斗者宝石','龙之鳞甲1','龙之鳞甲2','龙之鳞甲3','龙之鳞甲4','龙之利爪1','龙之利爪2','龙之利爪3','龙之利爪4','日落山泉','青龙魂','白虎魂','玄武魂','朱雀魂','斗者项链碎片1','斗者项链碎片2','斗者项链碎片3','斗者项链碎片4','新手武器强化','新手衣服强化','暗夜蛛丝','锐利蛛尖','蛇龙皮','蛇龙尖牙','蛇龙胆','蜘蛛之血'}
+    local iart={'ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_46.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_85.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_79.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_92.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_67.tga','ReplaceableTextures\\CommandButtons\\BTNA_88.tga','ReplaceableTextures\\CommandButtons\\BTNA_73.tga','ReplaceableTextures\\CommandButtons\\BTNA_70.tga','ReplaceableTextures\\CommandButtons\\BTNA_64.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_45.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_81.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_76.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_93.tga','ReplaceableTextures\\CommandButtons\\BTNA_71.tga','ReplaceableTextures\\CommandButtons\\BTNA_61.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_54.tga','ReplaceableTextures\\CommandButtons\\BTNA_88.tga','ReplaceableTextures\\CommandButtons\\BTNA_73.tga','ReplaceableTextures\\CommandButtons\\BTNA_70.tga','ReplaceableTextures\\CommandButtons\\BTNA_64.tga','ReplaceableTextures\\CommandButtons\\BTNA_49.tga','ReplaceableTextures\\CommandButtons\\BTNA_51.tga','ReplaceableTextures\\CommandButtons\\BTNA_59.tga','ReplaceableTextures\\CommandButtons\\BTNBoneChimes.blp','ReplaceableTextures\\CommandButtons\\BTNControlMagic.blp','ReplaceableTextures\\CommandButtons\\BTNA_66.tga','ReplaceableTextures\\CommandButtons\\BTNA_57.tga','ReplaceableTextures\\CommandButtons\\BTNCallToArms.blp','ReplaceableTextures\\CommandButtons\\BTNA_44.tga','ReplaceableTextures\\CommandButtons\\BTNA_52.tga','ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp','ReplaceableTextures\\CommandButtons\\BTNPotionGreen.tga','ReplaceableTextures\\CommandButtons\\BTNPotionPurple.tga','ReplaceableTextures\\CommandButtons\\BTNPotionOfRestoration.blp','ReplaceableTextures\\CommandButtons\\BTNA_40.tga','ReplaceableTextures\\CommandButtons\\BTNA_42.tga','ReplaceableTextures\\CommandButtons\\BTNA_41.tga','ReplaceableTextures\\CommandButtons\\BTNA_48.tga','ReplaceableTextures\\CommandButtons\\BTNA_43.tga','ReplaceableTextures\\CommandButtons\\BTNA_74.tga','ReplaceableTextures\\CommandButtons\\BTNUrnOfKelThuzad.blp','ReplaceableTextures\\CommandButtons\\BTNA_62.tga','ReplaceableTextures\\CommandButtons\\BTNA_75.tga','ReplaceableTextures\\CommandButtons\\BTNA_56.tga','ReplaceableTextures\\CommandButtons\\BTNA_55.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_91.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_90.tga','ReplaceableTextures\\CommandButtons\\BTNA_58.tga','ReplaceableTextures\\CommandButtons\\BTNA_87.tga','ReplaceableTextures\\CommandButtons\\BTNA_72.tga','ReplaceableTextures\\CommandButtons\\BTNA_69.tga','ReplaceableTextures\\CommandButtons\\BTNA_63.tga','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNRepairOn.blp','ReplaceableTextures\\CommandButtons\\BTNA_60.tga','ReplaceableTextures\\CommandButtons\\BTNA_86.tga','ReplaceableTextures\\CommandButtons\\BTNA_78.tga','ReplaceableTextures\\CommandButtons\\BTNA_77.tga','ReplaceableTextures\\CommandButtons\\BTNA_80.tga','ReplaceableTextures\\CommandButtons\\BTNA_82.tga'}
+    local iutip={'新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可以通过杀怪使武器升级（杀怪100）','新手武器，+攻击力；可用材料锐利蛛尖升级为锐利妖金剑','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可通过杀怪或者使用蜘蛛之血获得武器经验（需200装备经验升级）','凡器，+攻击力，+全属性，可用材料蛇龙尖牙升级为蛇龙破羽剑','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可通过杀怪或者使用蛇龙胆获得武器经验（需300装备经验升级）','仙具，+攻击力，+攻速，+全属性；可用材料龙之利爪1-4升级为龙威妖韫剑','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','天具，+攻击力，+攻速，+全属性；攻击时有几率释放龙威镇压敌人造成伤害','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','护手，+攻击力，+全属性；攻击时有10%几率造成致命一击，伤害为：','附魂护符，+全属性+攻击力+生命值','附魂护符，+敏捷+攻击速度+吸血','附魂护符，+力量+护甲+生命值','附魂护符，+智力+法术等级；被动技能：周围600码的敌人受到朱雀火焰灼烧；','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可以通过杀怪使防具升级（杀怪100）','新手防具，+生命值；可用材料暗夜蛛丝升级为蛛丝纯骨甲','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可通过杀怪或者使用蜘蛛之血获得防具经验（需200装备经验升级）','凡器，+生命值，+护甲；可用材料蛇龙皮升级为蛇龙冥魄甲','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可通过杀怪或者使用蛇龙胆获得防具经验（需300装备经验升级）','仙具，+生命值，+护甲，+全属性；可用材料龙之鳞甲1-4升级为龙鳞幽火甲','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','天具，+生命值，+护甲，+全属性；被攻击时有10%几率闪避物理攻击','鞋子，+移动速度100，+护甲','凡器，+生命值，+全属性；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','仙具，+生命值，+全属性，+生命恢复，减少死亡复活时间；相传有一种泉水可以洗涤掉暗淡之光','护符，+全属性+攻击力+生命值','护符，+敏捷+攻击速度+吸血','护符，+力量+护甲+生命值','护符，+智力+法术等级；被动技能：周围600码的敌人受到朱雀火焰灼烧；','宝器，+全属性，+生命值；无限复活','宝器，+全属性，+攻击力；群体变羊术持续3秒','宝器，+20%物理闪避，+攻击力； 驱除召唤和分身，CD60秒','宝器，+全属性；周围每秒减生命值各1%；能召唤圣泉（圣泉周围300码的友军获得每秒回血）','宝器，+全属性，+生命值；带天神下凡技能持续10秒，CD60秒','宝器，+全属性；单体减攻速及攻击并且造成每秒伤害 持续10秒,CD60秒','宝器，+全属性，+护甲，+生命值；抵抗眩晕效果。','宝器，+全属性，+生命值；被动效果每秒回血1%','宝器，+全属性，远程英雄攻击力提升100%；40%几率造成自身XX倍伤害','欧洲人附体，提升物品掉率20%','恢复自身5000生命值','恢复自身20000生命值','恢复自身100000生命值','恢复自身50%生命值','一级宝箱，开出随机宝器的几率为80%','二级宝箱，开出随机宝器的几率为85%','三级宝箱，开出随机宝器的几率为90%','四级宝箱，70%几率开出随机宝器，15%几率开出1级神器，10%几率获得2级神器，5%几率获得3级神器；','五级宝箱：55%几率开出随机宝器，20%几率开出1级神器，15%几率获得2级神器，10%几率获得3级神器；','刷新竞技场所有关卡','获得1-3级宝箱的概率为72%，获得4-5级宝箱的概率为28%','可以使斗者意志技能的经验值增加100点','可以使斗者意志技能的经验值增加500点','获得一个额外的斗魂点但不能超出上限。','宝石，可通过杀怪获得随机属性（金木水火土）','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之鳞甲+蛇龙冥破甲MAX=龙鳞幽火甲','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','四个龙之利爪+蛇龙破羽剑MAX=龙威妖韫剑','可以将黯淡的斗者之心洗涤为斗者之心','可以将魂魄附在护符上，增强属性；青龙魂+青龙护符=青龙护符-附魂','可以将魂魄附在护符上，增强属性；白虎魂+白虎护符=白虎护符-附魂','可以将魂魄附在护符上，增强属性；玄武魂+玄武护符=玄武护符-附魂','可以将魂魄附在护符上，增强属性；朱雀魂+朱雀护符=朱雀护符-附魂','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','集齐四个碎片可以合成黯淡的斗者项链','能把新手武器强化到Max','能把新手衣服强化到Max','暗夜蛛丝+初云宝砂衣max=蛛丝纯骨甲','锐利蛛尖+初云短泉剑max=锐利妖金剑','蛇龙皮+蛛丝纯骨甲max=蛇龙冥魄甲','蛇龙尖牙+锐利妖金剑max=蛇龙破羽剑','提升蛇龙冥魄甲与蛇龙破羽剑的装备经验50点。','提升蛛丝纯骨甲与锐利妖金剑的装备经验30点。'}
+    local itype={'Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Artifact','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Permanent','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Artifact','Charged','Charged','Charged','Charged','Charged','Charged','Charged','Charged','Charged','PowerUp','PowerUp','PowerUp','PowerUp','PowerUp','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Purchasable','Charged','Charged'}
+    local izdsy={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
+    local isycs={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
+    local ilv={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,4,4,4,4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,5,5,5,5,5,5,5,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,2,2,2,2,2,2,2,4,4,4,4,4,5,5,5,5,1,1,2,2,2,2,1,1}
     uid=854063
-    for x=1,148 do
+    for x=1,146 do
     local ad=slk.item.ches:new(change(uid+x))
     ad.Name=autoys(x,0,iname[x])
     ad.Art=iart[x]
@@ -788,19 +812,70 @@ endglobals
     call SetMusicVolume(PercentToInt(50,127))
 
 
-    //新手装备初始化
+    //等级1的可购买物品强化
+    //武器
+    call SaveInteger(udg_hs,'IB3U',0,1)
     call SaveInteger(udg_hs,'IB3U',1,'IC00')
-    call SaveInteger(udg_hs,'IB3U',2,'IC0Y')
-    call SaveInteger(udg_hs,'IB3V',1,'IC01')
+    call SaveInteger(udg_hs,'IB3U',2,'IC01')
+    call SaveInteger(udg_hs,'IB3U',3,'IC02')
+    call SaveInteger(udg_hs,'IB3U',4,'IC03')
+    //衣服
+    call SaveInteger(udg_hs,'IB3V',0,2)
+    call SaveInteger(udg_hs,'IB3V',1,'IC0Y')
     call SaveInteger(udg_hs,'IB3V',2,'IC0Z')
-    call SaveInteger(udg_hs,'IB3W',1,'IC02')
-    call SaveInteger(udg_hs,'IB3W',2,'IC10')
-    call SaveInteger(udg_hs,'IB3X',1,'IC03')
-    call SaveInteger(udg_hs,'IB3X',2,'IC11')
-    //装备强化和合成初始化函数
-    call itemreg('IB04',1,'IB3Z',1,0,0,0,0,0,0,0,0,'IC04',2,true)
+    call SaveInteger(udg_hs,'IB3V',3,'IC10')
+    call SaveInteger(udg_hs,'IB3V',4,'IC11')
+    //等级4
+    call SaveInteger(udg_hs,'IB3L',0,'IB2D')
+    call SaveInteger(udg_hs,'IB3L',1,'IB2E')
 
+
+    call SaveInteger(udg_hs,'IB3M',0,'IB2K')
+    call SaveInteger(udg_hs,'IB3N',0,'IB2L')
+    call SaveInteger(udg_hs,'IB3O',0,'IB2M')
+    call SaveInteger(udg_hs,'IB3P',0,'IB2N')
+    
+    call SaveInteger(udg_hs,'IB3M',1,'IB19')
+    call SaveInteger(udg_hs,'IB3N',1,'IB1A')
+    call SaveInteger(udg_hs,'IB3O',1,'IB1B')
+    call SaveInteger(udg_hs,'IB3P',1,'IB1C')
+
+    
+    
+
+
+
+
+
+
+
+    
+    //装备强化和合成初始化函数
+    //暗夜蛛丝
+    call itemreg('IB1H',1,'IB3W',1,0,0,0,0,0,0,0,0,'IC12',2,true)
+    //锐利蛛尖
+    call itemreg('IB04',1,'IB3X',1,0,0,0,0,0,0,0,0,'IC04',2,true)
+    //蛇龙皮
+    call itemreg('IB1M',1,'IB3Y',1,0,0,0,0,0,0,0,0,'IC17',2,true)
+    //蛇龙尖牙
+    call itemreg('IB09',1,'IB3Z',1,0,0,0,0,0,0,0,0,'IC09',2,true)
+    //龙之利爪
+    call itemreg('IB0E',1,'IB3H',1,'IB3I',1,'IB3J',1,'IB3K',1,0,0,'IC0E',5,true)
+    //龙之鳞甲
     call itemreg('IB1R',1,'IB3D',1,'IB3E',1,'IB3F',1,'IB3G',1,0,0,'IC1C',5,true)
+
+    //斗者项链
+    call SaveInteger(udg_hs,'IB2E',1,'IB2F')
+    call SaveInteger(udg_hs,'IB2E',2,'IB2G')
+    call SaveInteger(udg_hs,'IB2E',3,'IB2H')
+    call SaveInteger(udg_hs,'IB2E',4,'IB2I')
+    call SaveInteger(udg_hs,'IB2E',5,'IB2J')
+    //火焰护手
+    call SaveInteger(udg_hs,'IB13',1,'IB14')
+    call SaveInteger(udg_hs,'IB13',2,'IB15')
+    call SaveInteger(udg_hs,'IB13',3,'IB16')
+    call SaveInteger(udg_hs,'IB13',4,'IB17')
+    call SaveInteger(udg_hs,'IB13',5,'IB18')
 
     <?
     --技能
@@ -903,7 +978,80 @@ endglobals
     --ad.upgrades='RA00'--难度科技
     end
 
+
+    for x=0,5 do
     ?>
+    set vx[<?=x?>]=1
+    set zx[<?=x?>]=1
+    set cx[<?=x?>]=1
+    set yx[<?=x?>]=1
+    set fx[<?=x?>]=1
+
+    set m[<?=x?>]=GetRandomInt(-50,50)
+    set m[6]=m[<?=x?>]
+    set m[7]=-50
+    loop
+        exitwhen m[7]==m[6]
+        set  m[7]=m[7]+1
+    endloop
+    call SaveInteger(udg_hs,m[<?=x?>]+StringHash(GetPlayerName(Player(<?=x?>))),m[<?=x?>],<?=tonumber(StringHash('0'))?>+m[<?=x?>])
+    <?end?>
+
+    <?
+    --创建练功房怪物和书
+    local lgfname={'经1','经2','金','木1','木2','木3'}
+    local lgfid={slk.unit.hfoo,slk.unit.hgyr,slk.unit.ospw,slk.unit.efon,slk.unit.nepl,slk.unit.nepl}
+    local lgfart={'ReplaceableTextures\\CommandButtons\\BTNAcolyte.blp','ReplaceableTextures\\CommandButtons\\BTNAncientOfLore.blp','ReplaceableTextures\\CommandButtons\\BTNGoldmine.blp','ReplaceableTextures\\CommandButtons\\BTNAncientOfTheMoon.blp','ReplaceableTextures\\CommandButtons\\BTNAncientOfWonders.blp','ReplaceableTextures\\CommandButtons\\BTNGrabTree.blp'}
+    for x=1,6 do
+    local ad=slk.unit.nfbr:new(changeu(1412999+x))
+    ad.name=lgfname[x]--名字
+    ad.file=lgfid[x].file--模型
+    ad.Art=lgfid[x].Art--图标
+    ad.spd=300--移动速度
+    ad.minSpd=250--最小移动速度
+    ad.acquire=lgfid[x].acquire--最主动攻击范围
+    ad.collision=32--大小
+    ad.abilList='' --技能
+    --ad.dmgplus1=sh[x]--基础伤害
+    --ad.dmgUp1=dmgup[x]--伤害升级后期再设置
+    ad.sides1=1--骰子面数，不需要修改
+    ad.dice1=1--骰子数量，不需要修改
+    --ad.cool1=cool[x]--攻击间隔
+    ad.weapsOn=1--武器允许
+    ad.race='undead'--种族
+    --ad.HP=hp[x]--HP
+    ad.canFlee=0--不可逃跑
+    ad.unitSound=lgfid[x].unitSound--单位声音
+    ad.rangeN1=lgfid[x].rangeN1--攻击范围
+    ad.Missileart=lgfid[x].Missileart--投射物图像
+    ad.Missilespeed=lgfid[x].Missilespeed--投射物速率
+    ad.atkType1='pierce'--攻击类型
+    ad.Missilearc=lgfid[x].Missilearc--投射物弧度
+    ad.weapTp1=lgfid[x].weapTp1--武器类型
+    --ad.def=def[x]--基础护甲
+    --ad.defUp=defup[x]--护甲升级
+    --ad.upgrades='RA00'--难度科技
+
+    local ad=slk.item.ches:new(change(854423+x))
+    ad.Art=lgfart[x]
+    ad.class='PowerUp'
+    ad.Tip=lgfname[x]
+    ad.stockRegen=0
+    ad.usable=1
+    ad.uses=1
+    ad.Level=7
+    ad.perishable=1--使用完会消失 
+    ad.Ubertip=''
+    ad.goldcost=0
+
+    ?>set lgf[<?=x-1?>]=0
+    set lgf[<?=x+5?>]=0
+    set lgf[<?=x+11?>]=0
+    <?    
+
+    end
+    ?>
+
     set ttt=null
     endfunction 
 
@@ -922,5 +1070,6 @@ endglobals
         call bgj()//注册被攻击事件
         call death()//注册死亡事件
         call skill()//注册发动技能效果事件
+        call sywp()//注册任意单位使用物品
     endfunction
 endlibrary

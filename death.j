@@ -33,7 +33,7 @@ function death_1 takes nothing returns nothing
         set li[11]=LoadInteger(udg_hs,25,GetItemTypeId(it))//读取升级对应的等级
         set li[12]=LoadInteger(udg_hs,GetItemTypeId(it),2)//读取升级等级对应的强化石
         set li[13]=(li[11]+4)/5//设置升级所需经验
-        if li[10]==li[13]*100 then//判断升级经验是否足够
+        if li[10]>=li[13]*100 then//判断升级经验是否足够
             if ModuloInteger(li[11],5)!=0 then//判断是否需要材料
                 call UnitAddItem(u1,CreateItem(li[12],GetUnitX(u1),GetUnitY(u1)))//给予强化石
             endif
@@ -50,7 +50,7 @@ function death_1 takes nothing returns nothing
         set li[21]=LoadInteger(udg_hs,25,GetItemTypeId(it))//读取升级对应的等级
         set li[22]=LoadInteger(udg_hs,GetItemTypeId(it),2)//读取升级等级对应的强化石
         set li[23]=(li[21]+4)/5//设置升级所需经验
-        if li[20]==li[23]*100 then//判断升级经验是否足够
+        if li[20]>=li[23]*100 then//判断升级经验是否足够
             if ModuloInteger(li[21],5)!=0 then//判断是否需要材料
                 call UnitAddItem(u1,CreateItem(li[22],GetUnitX(u1),GetUnitY(u1)))//给予强化石
             endif
@@ -67,7 +67,7 @@ function death_1 takes nothing returns nothing
         set li[31]=LoadInteger(udg_hs,25,GetItemTypeId(it))//读取升级对应的等级
         set li[32]=LoadInteger(udg_hs,GetItemTypeId(it),2)//读取升级等级对应的强化石
         set li[33]=li[31]//设置升级所需经验
-        if li[30]==li[33]*100 then//判断升级经验是否足够
+        if li[30]>=li[33]*100 then//判断升级经验是否足够
             if ModuloInteger(li[31],5)!=0 then//判断是否需要材料
                 call UnitAddItem(u1,CreateItem(li[32],GetUnitX(u1),GetUnitY(u1)))//给予强化石
             endif
@@ -77,16 +77,14 @@ function death_1 takes nothing returns nothing
         endif
     endif
 
-    if GetUnitTypeId(u1)=='HA0G' then
+    if GetUnitTypeId(u1)=='HA0G' then//检测是否魔术师凶手
         set g=CreateGroup()
         set x=GetUnitX(u2)
         set y=GetUnitY(u2)
-        call BJDebugMsg(GetUnitName(u1))
         call GroupEnumUnitsInRange(g,x,y,200,null)
         loop
             set u3=FirstOfGroup(g)
             exitwhen u3==null
-                
                 if GetUnitState(u3,UNIT_STATE_LIFE)>0 and IsUnitOwnedByPlayer(u3,Player(11)) then
                     call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",GetUnitX(u3),GetUnitY(u3)))//创建特效
                     call UnitDamageTarget(u1,u3,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
@@ -94,6 +92,11 @@ function death_1 takes nothing returns nothing
                 call GroupRemoveUnit(g,u3)
         endloop
         call DestroyGroup(g)
+    endif
+    if HaveSavedInteger(udg_hs,GetHandleId(u2),666) then//检测是否练功房单位
+        set lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]=lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]-1
+        call FlushChildHashtable(udg_hs,GetHandleId(u2))
+        call RemoveUnit(u2)
     endif
     set u3=null
     set g=null
