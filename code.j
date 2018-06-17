@@ -218,7 +218,7 @@ endglobals
         call SaveReal(udg_hs,5,<?=zb?>,<?=playy[zb]?>)
         call SaveReal(udg_hs,6,<?=zb?>,<?=playface[zb]?>)
         call SaveInteger(udg_hs,10,'<?=ad.get_id()?>',<?=zb?>)
-        call CreateItem('<?=ad.get_id()?>',<?=(-39+zb)*32?>,1280)
+        call CreateItem('<?=ad.get_id()?>',<?=(-39+zb)*32?>,1280)//测试用
     <?
     end
 
@@ -262,6 +262,7 @@ endglobals
         ad.def=def[x]--基础护甲
         ad.defUp=defup[x]--护甲升级
         ad.upgrades='RA00'--难度科技
+        ad.deathType=0--死亡类型无法召唤不会腐化
         ?>
         call SaveInteger(udg_hs,7,<?=x?>,'<?=ad:get_id()?>')
         <?
@@ -328,7 +329,7 @@ endglobals
     local hspd={280,280,280,280,280,280,280,295,295,295,295,295,310,310,310,310,310}
     local hmiss={'','','','','','Abilities\\Weapons\\FarseerMissile\\FarseerMissile.mdl','Abilities\\Weapons\\MoonPriestessMissile\\MoonPriestessMissile.mdl','','Abilities\\Weapons\\BloodElfSpellThiefMISSILE\\BloodElfSpellThiefMISSILE.mdl','Abilities\\Weapons\\Rifle\\RifleImpact.mdl','','Abilities\\Weapons\\BloodElfMissile\\BloodElfMissile.mdl','','','','','Abilities\\Weapons\\DruidoftheTalonMissile\\DruidoftheTalonMissile.mdl'}
     local qxw={1,1,1,1,1,1,1,2,3,4,5,11,12,13,21,22,23}
-    local hskill={'AInv,A01H,A01I,A000,A00G,A00H,A00I,A00J','AInv,A01H,A01I,A000,A00G,A00H,A00K,A00L','AInv,A01H,A01I,A000,A00G,A00H,A00M,A00N','AInv,A01H,A01I,A000,A00G,A00H,A00O,A00P','AInv,A01H,A01I,A000,A00G,A00H,A00Q,A00R,A00S','AInv,A01H,A01I,A000,A00G,A00H,A00T,A00U','AInv,A01H,A01I,A000,A00G,A00H,A00V,A00W','AInv,A01H,A01I,A000,A00G,A00H,A00X,A00Y','AInv,A01H,A01I,A000,A00G,A00H,A00Z,A010','AInv,A01H,A01I,A000,A00G,A00H,A011,A012','AInv,A01H,A01I,A000,A00G,A00H,A013,A014','AInv,A01H,A01I,A000,A00G,A00H,A015,A016','AInv,A01H,A01I,A000,A00G,A00H,A017,A018','AInv,A01H,A01I,A000,A00G,A00H,A019,A01A','AInv,A01H,A01I,A000,A00G,A00H,A01B,A01C','AInv,A01H,A01I,A000,A00G,A00H,A01D,A01E','AInv,A01H,A01I,A000,A00G,A00H,A01F,A01G'}
+    local hskill={'A01V,AInv,A01H,A01I,A000,A00G,A00H,A00I,A00J','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00K,A00L','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00M,A00N','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00O,A00P','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00Q,A00S,A00R','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00T,A00U','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00V,A00W','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00X,A00Y','A01V,AInv,A01H,A01I,A000,A00G,A00H,A00Z,A010','A01V,AInv,A01H,A01I,A000,A00G,A00H,A011,A012','A01V,AInv,A01H,A01I,A000,A00G,A00H,A013,A014','A01V,AInv,A01H,A01I,A000,A00G,A00H,A015,A016','A01V,AInv,A01H,A01I,A000,A00G,A00H,A017,A018','A01V,AInv,A01H,A01I,A000,A00G,A00H,A019,A01A','A01V,AInv,A01H,A01I,A000,A00G,A00H,A01B,A01C','A01V,AInv,A01H,A01I,A000,A00G,A00H,A01D,A01E','A01V,AInv,A01H,A01I,A000,A00G,A00H,A01F,A01G'}
     local uid=806111
     for x=1,17 do
     local ad=obj[x]:new(change(uid+x))
@@ -377,11 +378,13 @@ endglobals
     --创建作弊菜单
     uid=807407
     local cdname={'双击打开作弊菜单','单击我回城'}
+    local cdcs={'I002,I003,I004,I001',''}
     local yjkj={'RA01',''}
+    local cdjn={'Aneu,Apit',''}
     for id=1,2 do
     local ad=slk.unit.nfbr:new(change(uid+id))
     ad.name=cdname[id]
-    ad.abilList=''
+    ad.abilList=cdjn[id]
     ad.Propernames=cdname[id]--称谓
     ad.race='human'
     ad.movetp='fly'
@@ -389,13 +392,14 @@ endglobals
     ad.file=''
     ad.unitShadow=''
     ad.Researches=yjkj[id]
+    ad.Sellitems=cdcs[id]
     end
 
     local ad=slk.unit.nfbr:new(changeu(809999))--创建一个助手
     ad.name='助手'
     ad.race='human'
     ad.spd=522
-    ad.abilList='AInv'
+    ad.abilList='AInv,A01V'
     ad.movetp='fly'
     ad.type='peon'
 
@@ -405,7 +409,7 @@ endglobals
     ad.spd=0
     ad.HP=5000
     ad.upgrades='RA01'
-    ad.Sellitems='I001'
+    ad.Sellitems='IB2Y,IB2Z,IB30,IB31'
     ad.abilList='Aneu,Apit'
     ?>
     set unitt= CreateUnit(Player(6),'<?=ad.get_id()?>',0,-3840,90)//创建基地
@@ -686,7 +690,8 @@ endglobals
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-
+    /*
+    //这部分理论上不需要了
     set ttt=CreateTrigger()
 
     call SaveInteger(udg_hs,GetHandleId(Player(<?=x-1?>)),StringHash("进阶场"),<?=x+6?>)//保存坐标
@@ -694,7 +699,7 @@ endglobals
     call TriggerAddAction(ttt,function zs)
     call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)
     call SavePlayerHandle(udg_hs,GetHandleId(unitt),StringHash("玩家"),Player(<?=x-1?>))
-
+    */
     call SaveReal(udg_hs,GetHandleId(Player(<?=x-1?>)),StringHash("音量"),50)
     <?
 
@@ -982,7 +987,7 @@ endglobals
     for x=0,5 do
     ?>
     set vx[<?=x?>]=1
-    set zx[<?=x?>]=1
+    set zx[<?=x?>]=0
     set cx[<?=x?>]=1
     set yx[<?=x?>]=1
     set fx[<?=x?>]=1
@@ -1031,6 +1036,7 @@ endglobals
     --ad.def=def[x]--基础护甲
     --ad.defUp=defup[x]--护甲升级
     --ad.upgrades='RA00'--难度科技
+    ad.deathType=0
 
     local ad=slk.item.ches:new(change(854423+x))
     ad.Art=lgfart[x]

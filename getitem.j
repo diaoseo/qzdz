@@ -54,7 +54,6 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
         call RemoveItem(GetManipulatedItem())//能量提升直排
     endif
 
-
     if GetItemType(litem)==ITEM_TYPE_PURCHASABLE then//判断是否材料，类型为可购买
         if lv==1 then//一级新手装备，直接给予英雄真强化书
             call UnitAddItem(u,litem)//转移物品
@@ -227,9 +226,6 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
         endloop
     endif
 
-
-
-
     set litem=null
     set u=null
     set u1=null
@@ -245,6 +241,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
     local unit u1 = GetTriggerUnit()//触发单位
     local integer lv=GetItemLevel(litem)//物品等级
     local integer array li
+    local unit u2
 
     if GetItemType(litem)==ITEM_TYPE_POWERUP then//判断能量提升
         if lv==1 then//判断等级开启传送
@@ -287,13 +284,66 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set u1=null
             return
         endif
-        if lv==7 then
+        if lv==7 then//切换刷怪类型，后续判断是否够钱
             set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
             set lgf[GetPlayerId(GetOwningPlayer(u1))+12]=ti+738131968
-            call BJDebugMsg(GetObjectName(ti+738131968))
         endif
         if lv==8 then
-            call UnitAddItem(u1,CreateItem(1229008944+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))
+            if ti=='I001' then//进入转生房
+                call UnitAddItem(u1,CreateItem(1229008944+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))
+            else
+                if ti=='I002' then//进入转生
+                    set li[0]=GetPlayerId(GetOwningPlayer(u1))
+                    if true then//足够的钱
+                        if zx[li[0]]<=0.6 then//足够的等级，或者可以转生
+                            if li[0]>3 then
+                                call UnitAddItem(u1,CreateItem('IA0='+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
+                                if HaveSavedInteger (udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
+                                else
+                                    set u2=CreateUnit(Player(11),'UB10'+R2I(zx[li[0]]*10),LoadReal(udg_hs,1,li[0]+7),LoadReal(udg_hs,2,li[0]+7),LoadReal(udg_hs,3,li[0]+7))//创建转生BOSS
+                                    call SaveInteger (udg_hs,GetHandleId(GetOwningPlayer(u1)),51,li[0])
+                                    call SaveInteger(udg_hs,GetHandleId(u2),51,li[0])
+                                endif
+                            else
+                                call UnitAddItem(u1,CreateItem('IA06'+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
+                                if HaveSavedInteger (udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
+                                else
+                                    set u2=CreateUnit(Player(11),'UB10'+R2I(zx[li[0]]*10),LoadReal(udg_hs,1,li[0]+7),LoadReal(udg_hs,2,li[0]+7),LoadReal(udg_hs,3,li[0]+7))//创建转生BOSS
+                                    call SaveInteger (udg_hs,GetHandleId(GetOwningPlayer(u1)),51,li[0])
+                                    call SaveInteger(udg_hs,GetHandleId(u2),51,li[0])
+                                endif
+                            endif
+                        endif
+                    endif
+                else
+                    if ti=='I003' or ti=='I004' then//修神或入魔
+                        if true then//足够的钱
+                            if zx[li[0]]==0.7 then//足够的等级和转生
+                                if li[0]>3 then
+                                    call UnitAddItem(u1,CreateItem('IA0='+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
+                                    if HaveSavedInteger(udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
+                                    else
+                                        set u2=CreateUnit(Player(11),ti+202506499,LoadReal(udg_hs,1,li[0]+7),LoadReal(udg_hs,2,li[0]+7),LoadReal(udg_hs,3,li[0]+7))//创建转生BOSS
+                                        call SaveInteger(udg_hs,GetHandleId(u2),51,li[0])
+                                        call SaveInteger(udg_hs,GetHandleId(u2),52,ti-'I003')
+                                        call SaveInteger(udg_hs,GetHandleId(GetOwningPlayer(u1)),51,li[0])
+                                        
+                                    endif
+                                else
+                                    call UnitAddItem(u1,CreateItem('IA06'+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
+                                    if HaveSavedInteger(udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
+                                    else
+                                        set u2=CreateUnit(Player(11),ti+202506499,LoadReal(udg_hs,1,li[0]+7),LoadReal(udg_hs,2,li[0]+7),LoadReal(udg_hs,3,li[0]+7))//创建转生BOSS
+                                        call SaveInteger(udg_hs,GetHandleId(u2),52,ti-'I003')
+                                        call SaveInteger(udg_hs,GetHandleId(u2),51,li[0])
+                                        call SaveInteger(udg_hs,GetHandleId(GetOwningPlayer(u1)),51,li[0])
+                                    endif
+                                endif
+                            endif
+                        endif
+                    endif
+                endif
+            endif
         endif
         call RemoveItem(GetManipulatedItem())//能量提升直排
     endif
@@ -320,7 +370,6 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             endif
         endif
     endif
-
 
     if GetItemType(litem)==ITEM_TYPE_PURCHASABLE then//判断是否材料，类型为可购买
         if lv==1 then//一级新手装备，直接给予英雄真强化书
@@ -492,6 +541,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
 
     set litem=null
     set u1=null
+    set u2=null
 endfunction
 
 function dropitem takes nothing returns nothing//丢弃物品触发

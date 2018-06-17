@@ -6,15 +6,14 @@ function sys_cg takes nothing returns nothing
     local integer loopli=0
         loop
             exitwhen li1==2
-            set unitt=CreateUnit(Player(11),LoadInteger(udg_hs,7,b),LoadReal(udg_hs,1,77)+li1*1536,LoadReal(udg_hs,2,77),270)
-            call IssueNeutralPointOrderById(LoadPlayerHandle(udg_hs,0,StringHash("出怪玩家")),unitt,851983,LoadReal(udg_hs,4,77),LoadReal(udg_hs,5,77))
+            set unitt=CreateUnit(Player(11),LoadInteger(udg_hs,7,b),li1*1536,3840,270)
+            call IssueNeutralPointOrderById(Player(11),unitt,851983,0,-3840)
             set loopli=0
             loop
                 exitwhen loopli==6
-                call UnitShareVision(unitt,Player(loopli),true)
+                call UnitShareVision(unitt,Player(loopli),true)//共享视野
                 set loopli=loopli+1
             endloop
-            
             set li1=li1+1
         endloop
     set g=g-1

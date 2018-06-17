@@ -65,7 +65,7 @@ function xg takes nothing returns nothing//小怪死亡触发
     set tr=null
 endfunction
 
-
+/*
 function zs_1 takes nothing returns nothing
     local unit u=LoadUnitHandle(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("转生"))//读取死亡单位
     local player p=LoadPlayerHandle(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("玩家"))//读取所属玩家
@@ -75,7 +75,6 @@ function zs_1 takes nothing returns nothing
     local real y=LoadReal(udg_hs,2,i1)
     local real f=LoadReal(udg_hs,3,i1)
     local trigger t=LoadTriggerHandle(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("触发"))
-    call RemoveUnit(u)//移除死亡单位
     call BJDebugMsg(I2S(i))
     call BJDebugMsg(I2S('UB15'))
     if i<'UB15' then//判断是有下一转
@@ -86,6 +85,7 @@ function zs_1 takes nothing returns nothing
     endif
     call FlushChildHashtable(udg_hs,GetHandleId(GetExpiredTimer()))//清除哈希表
     call DestroyTimer(GetExpiredTimer())//清除计时器
+    call RemoveUnit(u)//移除死亡单位
     set u=null
     set p=null
     set t=null
@@ -107,6 +107,6 @@ function zs takes nothing returns nothing//转生触发
     set t=null
     set tr=null
 endfunction
-
+*/
 
 endlibrary

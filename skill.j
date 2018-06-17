@@ -3,6 +3,11 @@ library libskill requires libcf
 
 
 
+function cw_skill takes nothing returns nothing
+    call UnitAddItem(LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),StringHash("英雄")),GetSpellTargetItem())
+endfunction
+
+
 function timer_smjq takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer i0=GetHandleId(t)
@@ -451,6 +456,10 @@ function skill_1 takes nothing returns nothing
         call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)*60*0.01)
     endif
 
+    if GetSpellAbilityId()=='A01V' then//传送物品
+        call UnitAddItem(LoadUnitHandle(udg_hs,GetHandleId(p1),49),GetSpellTargetItem())
+    endif
+
     set g=null
     set u=null
     set u1=null
@@ -512,6 +521,9 @@ function skill takes nothing returns nothing
     set tr=CreateTrigger()
     call TriggerAddAction(tr,function skill_jzxj)
     call SaveTriggerHandle(udg_hs,0,101,tr)
+    set tr=CreateTrigger()
+    call TriggerAddAction(tr,function cw_skill)
+    call SaveTriggerHandle(udg_hs,0,102,tr)
     set tr=null
 endfunction
 

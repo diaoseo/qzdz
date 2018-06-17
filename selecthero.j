@@ -41,7 +41,9 @@ function xzyx1 takes nothing returns nothing
                 endif
                 set u1=CreateUnit(GetTriggerPlayer(),'hCZZ',LoadReal(udg_hs,4,77),LoadReal(udg_hs,5,77)+256,LoadReal(udg_hs,6,77))//创建宠物
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,StringHash("宠物获得物品触发")),u1,EVENT_UNIT_PICKUP_ITEM)//注册单位获得物品事件
+                call SaveUnitHandle(udg_hs,GetHandleId(GetTriggerPlayer()),49,u1)//存储宠物
                 call SetUnitInvulnerable(u1,true)//设置无敌
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,102),u1,EVENT_UNIT_SPELL_EFFECT)//注册宠物发动技能效果事件
                 set u1=null
                 if GetUnitTypeId(GetTriggerUnit())=='HA07' then//注册召唤事件
                     call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs,0,101),GetTriggerUnit(),EVENT_UNIT_SUMMON)

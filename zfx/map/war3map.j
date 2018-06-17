@@ -4,7 +4,7 @@ constant boolean LIBRARY_libbgj=true
 //endglobals from libbgj
 //globals from libcf:
 constant boolean LIBRARY_libcf=true
-hashtable libcf__z_h=InitHashtable()
+hashtable libcf___z_h=InitHashtable()
 //endglobals from libcf
 //globals from libchuguai:
 constant boolean LIBRARY_libchuguai=true
@@ -150,85 +150,85 @@ endfunction
 
 //library libbgj ends
 //library libcf:
-function libcf__hy3 takes nothing returns nothing
-    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
+function libcf___hy3 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf___z_h, GetHandleId(GetExpiredTimer()), 0)
     call SetUnitTimeScale(u, 0)
-    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
+    call FlushChildHashtable(libcf___z_h, GetHandleId(GetExpiredTimer()))
     call DestroyTimer(GetExpiredTimer())
     set u=null
 endfunction
-function libcf__hy2 takes nothing returns nothing
-    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
-    local real sj=LoadReal(libcf__z_h, GetHandleId(GetExpiredTimer()), 1)
+function libcf___hy2 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf___z_h, GetHandleId(GetExpiredTimer()), 0)
+    local real sj=LoadReal(libcf___z_h, GetHandleId(GetExpiredTimer()), 1)
     local timer t=CreateTimer()
     call SetUnitTimeScale(u, 1)
-    call TimerStart(t, sj, false, function libcf__hy3)
-    call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
-    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
+    call TimerStart(t, sj, false, function libcf___hy3)
+    call SaveUnitHandle(libcf___z_h, GetHandleId(t), 0, u)
+    call FlushChildHashtable(libcf___z_h, GetHandleId(GetExpiredTimer()))
     call DestroyTimer(GetExpiredTimer())
     set u=null
     set t=null
 endfunction
-function libcf__hy1 takes nothing returns nothing
+function libcf___hy1 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
-    local integer li=LoadInteger(libcf__z_h, h, 1)
+    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
+    local integer li=LoadInteger(libcf___z_h, h, 1)
     if li == 20 then //20级的透明度
         call RemoveUnit(u) //移除单位
         call DestroyTimer(GetExpiredTimer()) //删除到期计时器
-        call FlushChildHashtable(libcf__z_h, h) //清理哈希表
+        call FlushChildHashtable(libcf___z_h, h) //清理哈希表
     else
         set li=li + 1
         call SetUnitVertexColor(u, 255, 255, 255, R2I(( 255 / 20 ) * li)) //设置透明度
-        call SaveInteger(libcf__z_h, h, 1, li) //保存当前透明度层次
+        call SaveInteger(libcf___z_h, h, 1, li) //保存当前透明度层次
     endif
     set u=null
 endfunction
-function libcf__cf_3 takes nothing returns nothing
+function libcf___cf_3 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
     local real ux=GetUnitX(u)
     local real uy=GetUnitY(u)
-    local integer c=LoadInteger(libcf__z_h, h, 1)
-    local integer c1=LoadInteger(libcf__z_h, h, 2)
+    local integer c=LoadInteger(libcf___z_h, h, 1)
+    local integer c1=LoadInteger(libcf___z_h, h, 2)
 local timer t=CreateTimer()
     local integer h1=GetHandleId(t)
     local real gd=GetUnitFlyHeight(u)
-    local real sj=LoadReal(libcf__z_h, h, 5)
+    local real sj=LoadReal(libcf___z_h, h, 5)
     if c1 < c then
-        set u=CreateUnit(GetOwningPlayer(u), LoadInteger(libcf__z_h, h, 99), ux, uy, GetUnitFacing(u)) //创建幻影
+        set u=CreateUnit(GetOwningPlayer(u), LoadInteger(libcf___z_h, h, 99), ux, uy, GetUnitFacing(u)) //创建幻影
         call SetUnitFlyHeight(u, gd, 0) //设置幻影的高度
         call SetUnitVertexColor(u, 255, 255, 255, 0) //设置幻影初始透明度
         call UnitAddAbility(u, 'Arav') //添加风暴之鸦
         call UnitRemoveAbility(u, 'Arav') //删除风暴之鸦
-        call SaveUnitHandle(libcf__z_h, h1, 0, u) //保存单位
-        call TimerStart(t, 0.04, true, function libcf__hy1)
+        call SaveUnitHandle(libcf___z_h, h1, 0, u) //保存单位
+        call TimerStart(t, 0.04, true, function libcf___hy1)
         call SetUnitAnimationByIndex(u, 3)
         call SetUnitTimeScale(u, 10)
         set t=CreateTimer()
-        call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
-        call SaveReal(libcf__z_h, GetHandleId(t), 1, sj)
-        call TimerStart(t, sj * 0.1 * c1, true, function libcf__hy2)
+        call SaveUnitHandle(libcf___z_h, GetHandleId(t), 0, u)
+        call SaveReal(libcf___z_h, GetHandleId(t), 1, sj)
+        call TimerStart(t, sj * 0.1 * c1, true, function libcf___hy2)
         set c1=c1 + 1
-        call SaveInteger(libcf__z_h, h, 2, c1)
+        call SaveInteger(libcf___z_h, h, 2, c1)
     else
-        call FlushChildHashtable(libcf__z_h, h)
+        call FlushChildHashtable(libcf___z_h, h)
         call DestroyTimer(GetExpiredTimer())
     endif
     set u=null
     set t=null
 endfunction
-function libcf__cf_1 takes nothing returns nothing
+function libcf___cf_1 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
     local real ux=GetUnitX(u)
     local real uy=GetUnitY(u)
-    local real a=LoadReal(libcf__z_h, h, 1)
-    local real jl=LoadReal(libcf__z_h, h, 2)
-    local integer c=LoadInteger(libcf__z_h, h, 3)
-    local integer c1=LoadInteger(libcf__z_h, h, 4)
-local boolean ty=LoadBoolean(libcf__z_h, h, 7)
-    local real gd=LoadReal(libcf__z_h, h, 6)
+    local real a=LoadReal(libcf___z_h, h, 1)
+    local real jl=LoadReal(libcf___z_h, h, 2)
+    local integer c=LoadInteger(libcf___z_h, h, 3)
+    local integer c1=LoadInteger(libcf___z_h, h, 4)
+local boolean ty=LoadBoolean(libcf___z_h, h, 7)
+    local real gd=LoadReal(libcf___z_h, h, 6)
     if c1 < c then
         if IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_WALKABILITY) and IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
         call BJDebugMsg("出事了？")
@@ -248,11 +248,11 @@ local boolean ty=LoadBoolean(libcf__z_h, h, 7)
             endif
         endif
         set c1=c1 + 1
-        call SaveInteger(libcf__z_h, h, 4, c1)
+        call SaveInteger(libcf___z_h, h, 4, c1)
     else
         //call PauseUnit(u,false)
         call DestroyTimer(GetExpiredTimer())
-        call FlushChildHashtable(libcf__z_h, h)
+        call FlushChildHashtable(libcf___z_h, h)
     endif
     set u=null
 endfunction
@@ -265,31 +265,31 @@ function libcf_cf takes unit u,real x,real y,real s1,real s2,boolean yhy,boolean
     local real c=s1 / s2
     local real xjl=jl / c
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
-    call SaveReal(libcf__z_h, h, 1, Atan2(y - uy, x - ux)) // 角度
-    call SaveReal(libcf__z_h, h, 2, xjl) //每次距离
-    call SaveInteger(libcf__z_h, h, 3, R2I(c)) //刷新次数
-    call TimerStart(t, s2, true, function libcf__cf_1) //冲锋
+    call SaveUnitHandle(libcf___z_h, h, 0, u) //单位
+    call SaveReal(libcf___z_h, h, 1, Atan2(y - uy, x - ux)) // 角度
+    call SaveReal(libcf___z_h, h, 2, xjl) //每次距离
+    call SaveInteger(libcf___z_h, h, 3, R2I(c)) //刷新次数
+    call TimerStart(t, s2, true, function libcf___cf_1) //冲锋
     call SetUnitAnimationByIndex(u, 3)
     if ty then
         call UnitAddAbility(u, 'Arav')
         call UnitRemoveAbility(u, 'Arav')
-        call SaveBoolean(libcf__z_h, h, 7, ty)
-        call SaveReal(libcf__z_h, h, 6, 400 / c) //每次跳跃高度
+        call SaveBoolean(libcf___z_h, h, 7, ty)
+        call SaveReal(libcf___z_h, h, 6, 400 / c) //每次跳跃高度
     endif
     if yhy then
         //call PauseUnit(u,true)
         set t=CreateTimer()
         set h=GetHandleId(t)
-        call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
-        call SaveInteger(libcf__z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
+        call SaveUnitHandle(libcf___z_h, h, 0, u) //单位
+        call SaveInteger(libcf___z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
         if LoadInteger(udg_hs, 0, 105) == 1 then
-            call SaveInteger(libcf__z_h, h, 99, 'n004')
+            call SaveInteger(libcf___z_h, h, 99, 'n004')
         else
-            call SaveInteger(libcf__z_h, h, 99, 'n005')
+            call SaveInteger(libcf___z_h, h, 99, 'n005')
         endif
-        call TimerStart(t, 0.04, true, function libcf__cf_3)
-        call SaveReal(libcf__z_h, h, 5, s2)
+        call TimerStart(t, 0.04, true, function libcf___cf_3)
+        call SaveReal(libcf___z_h, h, 5, s2)
     endif
     set t=null
 endfunction
@@ -305,11 +305,11 @@ function libcf_cf1 takes unit u1,unit u2 returns nothing
     local real xjl=jl / c
     local timer t=CreateTimer()
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf__z_h, h, 0, u1)
-    call SaveReal(libcf__z_h, h, 1, a)
-    call SaveReal(libcf__z_h, h, 2, xjl)
-    call SaveInteger(libcf__z_h, h, 3, R2I(c))
-    call TimerStart(t, 0.04, true, function libcf__cf_1)
+    call SaveUnitHandle(libcf___z_h, h, 0, u1)
+    call SaveReal(libcf___z_h, h, 1, a)
+    call SaveReal(libcf___z_h, h, 2, xjl)
+    call SaveInteger(libcf___z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf___cf_1)
     set t=null
 endfunction
 function libcf_cf2 takes unit u1,unit u2 returns nothing
@@ -324,11 +324,11 @@ function libcf_cf2 takes unit u1,unit u2 returns nothing
     local real xjl=jl / c
     local timer t=CreateTimer()
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf__z_h, h, 0, u1)
-    call SaveReal(libcf__z_h, h, 1, a)
-    call SaveReal(libcf__z_h, h, 2, xjl)
-    call SaveInteger(libcf__z_h, h, 3, R2I(c))
-    call TimerStart(t, 0.04, true, function libcf__cf_1)
+    call SaveUnitHandle(libcf___z_h, h, 0, u1)
+    call SaveReal(libcf___z_h, h, 1, a)
+    call SaveReal(libcf___z_h, h, 2, xjl)
+    call SaveInteger(libcf___z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf___cf_1)
     set t=null
 endfunction
 function cfsh_1 takes nothing returns nothing
@@ -526,7 +526,7 @@ function death_1 takes nothing returns nothing
             call BJDebugMsg(I2S(li[30]) + "手套" + I2S(li[33] * 100))
         endif
     endif
-    if GetUnitTypeId(u1) == 'HA0G' then
+    if GetUnitTypeId(u1) == 'HA0G' then //检测是否魔术师凶手
         set l__g=CreateGroup()
         set x=GetUnitX(u2)
         set y=GetUnitY(u2)
@@ -542,10 +542,24 @@ function death_1 takes nothing returns nothing
         endloop
         call DestroyGroup(l__g)
     endif
-    if HaveSavedInteger(udg_hs, GetHandleId(u2), 666) then
+    if HaveSavedInteger(udg_hs, GetHandleId(u2), 666) then //检测是否练功房单位
         set lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6]=lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6] - 1
         call FlushChildHashtable(udg_hs, GetHandleId(u2))
         call RemoveUnit(u2)
+    else
+        if HaveSavedInteger(udg_hs, GetHandleId(u2), 51) then
+            set li[2]=LoadInteger(udg_hs, GetHandleId(u2), 51)
+            set zx[li[2]]=zx[li[2]] + 0.1
+            call BJDebugMsg("恭喜傻逼转生到 " + I2S(R2I(( zx[li[2]] * 10 ) + 0.5)) + " 转") //调试时显示
+            if HaveSavedInteger(udg_hs, GetHandleId(u2), 52) then
+                set li[3]=LoadInteger(udg_hs, GetHandleId(u2), 52)
+                //在此开启最终进阶动作
+                call BJDebugMsg(I2S(li[3]))
+                call RemoveSavedInteger(udg_hs, GetHandleId(u2), 52)
+            endif
+            call RemoveSavedInteger(udg_hs, GetHandleId(u2), 51)
+            call RemoveSavedInteger(udg_hs, li[1], 51)
+        endif
     endif
     set u3=null
     set l__g=null
@@ -645,26 +659,26 @@ function sywp_1 takes nothing returns nothing
     set li[0]=GetItemTypeId(litem)
     if li[0] == 'IB2Y' then //一级回复药
         set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
-        if r[0] > 0 then
+        if r[0] > 0.405 then
             call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 5000)
         endif
     endif
     if li[0] == 'IB2Z' then //二级回复药
         set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
-        if r[0] > 0 then
+        if r[0] > 0.405 then
             call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 20000)
         endif
     endif
     if li[0] == 'IB30' then //三级回复药
         set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
-        if r[0] > 0 then
+        if r[0] > 0.405 then
             call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + 100000)
         endif
     endif
     if li[0] == 'IB31' then //四级回复药
         set r[0]=GetUnitState(u1, UNIT_STATE_LIFE)
         set r[1]=GetUnitState(u1, UNIT_STATE_MAX_LIFE)
-        if r[0] > 0 then
+        if r[0] > 0.405 then
             call SetUnitState(u1, UNIT_STATE_LIFE, r[0] + r[1] / 2)
         endif
     endif
@@ -751,15 +765,14 @@ function sys_cg takes nothing returns nothing
     local integer loopli=0
         loop
             exitwhen li1 == 2
-            set unitt=CreateUnit(Player(11), LoadInteger(udg_hs, 7, b), LoadReal(udg_hs, 1, 77) + li1 * 1536, LoadReal(udg_hs, 2, 77), 270)
-            call IssueNeutralPointOrderById(LoadPlayerHandle(udg_hs, 0, StringHash("出怪玩家")), unitt, 851983, LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77))
+            set unitt=CreateUnit(Player(11), LoadInteger(udg_hs, 7, b), li1 * 1536, 3840, 270)
+            call IssueNeutralPointOrderById(Player(11), unitt, 851983, 0, - 3840)
             set loopli=0
             loop
                 exitwhen loopli == 6
-                call UnitShareVision(unitt, Player(loopli), true)
+                call UnitShareVision(unitt, Player(loopli), true) //共享视野
                 set loopli=loopli + 1
             endloop
-            
             set li1=li1 + 1
         endloop
     set g=g - 1
@@ -1570,6 +1583,7 @@ function getitem_1 takes nothing returns nothing
     local unit u1= GetTriggerUnit()
     local integer lv=GetItemLevel(litem)
     local integer array li
+    local unit u2
     if GetItemType(litem) == ITEM_TYPE_POWERUP then //判断能量提升
         if lv == 1 then //判断等级开启传送
             call SetUnitPosition(u1, x, y) //传送
@@ -1611,13 +1625,66 @@ function getitem_1 takes nothing returns nothing
             set u1=null
             return
         endif
-        if lv == 7 then
+        if lv == 7 then //切换刷怪类型，后续判断是否够钱
             set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
             set lgf[GetPlayerId(GetOwningPlayer(u1)) + 12]=ti + 738131968
-            call BJDebugMsg(GetObjectName(ti + 738131968))
         endif
         if lv == 8 then
-            call UnitAddItem(u1, CreateItem(1229008944 + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1)))
+            if ti == 'I001' then //进入转生房
+                call UnitAddItem(u1, CreateItem(1229008944 + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1)))
+            else
+                if ti == 'I002' then //进入转生
+                    set li[0]=GetPlayerId(GetOwningPlayer(u1))
+                    if true then //足够的钱
+                        if zx[li[0]] <= 0.6 then //足够的等级，或者可以转生
+                            if li[0] > 3 then
+                                call UnitAddItem(u1, CreateItem('IA0=' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
+                                if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
+                                else
+                                    set u2=CreateUnit(Player(11), 'UB10' + R2I(zx[li[0]] * 10), LoadReal(udg_hs, 1, li[0] + 7), LoadReal(udg_hs, 2, li[0] + 7), LoadReal(udg_hs, 3, li[0] + 7)) //创建转生BOSS
+                                    call SaveInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51, li[0])
+                                    call SaveInteger(udg_hs, GetHandleId(u2), 51, li[0])
+                                endif
+                            else
+                                call UnitAddItem(u1, CreateItem('IA06' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
+                                if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
+                                else
+                                    set u2=CreateUnit(Player(11), 'UB10' + R2I(zx[li[0]] * 10), LoadReal(udg_hs, 1, li[0] + 7), LoadReal(udg_hs, 2, li[0] + 7), LoadReal(udg_hs, 3, li[0] + 7)) //创建转生BOSS
+                                    call SaveInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51, li[0])
+                                    call SaveInteger(udg_hs, GetHandleId(u2), 51, li[0])
+                                endif
+                            endif
+                        endif
+                    endif
+                else
+                    if ti == 'I003' or ti == 'I004' then //修神或入魔
+                        if true then //足够的钱
+                            if zx[li[0]] == 0.7 then //足够的等级和转生
+                                if li[0] > 3 then
+                                    call UnitAddItem(u1, CreateItem('IA0=' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
+                                    if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
+                                    else
+                                        set u2=CreateUnit(Player(11), ti + 202506499, LoadReal(udg_hs, 1, li[0] + 7), LoadReal(udg_hs, 2, li[0] + 7), LoadReal(udg_hs, 3, li[0] + 7)) //创建转生BOSS
+                                        call SaveInteger(udg_hs, GetHandleId(u2), 51, li[0])
+                                        call SaveInteger(udg_hs, GetHandleId(u2), 52, ti - 'I003')
+                                        call SaveInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51, li[0])
+                                        
+                                    endif
+                                else
+                                    call UnitAddItem(u1, CreateItem('IA06' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
+                                    if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
+                                    else
+                                        set u2=CreateUnit(Player(11), ti + 202506499, LoadReal(udg_hs, 1, li[0] + 7), LoadReal(udg_hs, 2, li[0] + 7), LoadReal(udg_hs, 3, li[0] + 7)) //创建转生BOSS
+                                        call SaveInteger(udg_hs, GetHandleId(u2), 52, ti - 'I003')
+                                        call SaveInteger(udg_hs, GetHandleId(u2), 51, li[0])
+                                        call SaveInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51, li[0])
+                                    endif
+                                endif
+                            endif
+                        endif
+                    endif
+                endif
+            endif
         endif
         call RemoveItem(GetManipulatedItem()) //能量提升直排
     endif
@@ -1809,6 +1876,7 @@ function getitem_1 takes nothing returns nothing
     endif
     set litem=null
     set u1=null
+    set u2=null
 endfunction
 function dropitem takes nothing returns nothing
     if GetItemType(GetManipulatedItem()) == ITEM_TYPE_PERMANENT then //判断丢弃了永久物品
@@ -1944,7 +2012,9 @@ function xzyx1 takes nothing returns nothing
                 endif
                 set u1=CreateUnit(GetTriggerPlayer(), 'hCZZ', LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77) + 256, LoadReal(udg_hs, 6, 77)) //创建宠物
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("宠物获得物品触发")), u1, EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
+                call SaveUnitHandle(udg_hs, GetHandleId(GetTriggerPlayer()), 49, u1) //存储宠物
                 call SetUnitInvulnerable(u1, true) //设置无敌
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 102), u1, EVENT_UNIT_SPELL_EFFECT) //注册宠物发动技能效果事件
                 set u1=null
                 if GetUnitTypeId(GetTriggerUnit()) == 'HA07' then //注册召唤事件
                     call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 101), GetTriggerUnit(), EVENT_UNIT_SUMMON)
@@ -1991,6 +2061,9 @@ endfunction
 
 //library libselecthero ends
 //library libskill:
+function cw_skill takes nothing returns nothing
+    call UnitAddItem(LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄")), GetSpellTargetItem())
+endfunction
 function timer_smjq takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer i0=GetHandleId(t)
@@ -2403,6 +2476,9 @@ function skill_1 takes nothing returns nothing
     if GetSpellAbilityId() == 'A01G' then //血流爆炸
         call SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) * 60 * 0.01)
     endif
+    if GetSpellAbilityId() == 'A01V' then //传送物品
+        call UnitAddItem(LoadUnitHandle(udg_hs, GetHandleId(p1), 49), GetSpellTargetItem())
+    endif
     set l__g=null
     set u=null
     set u1=null
@@ -2459,6 +2535,9 @@ function skill takes nothing returns nothing
     set tr=CreateTrigger()
     call TriggerAddAction(tr, function skill_jzxj)
     call SaveTriggerHandle(udg_hs, 0, 101, tr)
+    set tr=CreateTrigger()
+    call TriggerAddAction(tr, function cw_skill)
+    call SaveTriggerHandle(udg_hs, 0, 102, tr)
     set tr=null
 endfunction
 
@@ -2523,45 +2602,7 @@ function xg takes nothing returns nothing
     set t=null
     set tr=null
 endfunction
-function zs_1 takes nothing returns nothing
-    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("转生"))
-    local player p=LoadPlayerHandle(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("玩家"))
-    local integer i1=LoadInteger(udg_hs, GetHandleId(p), StringHash("进阶场"))
-    local integer l__i=GetUnitTypeId(u)
-    local real x=LoadReal(udg_hs, 1, i1)
-    local real y=LoadReal(udg_hs, 2, i1)
-    local real f=LoadReal(udg_hs, 3, i1)
-    local trigger t=LoadTriggerHandle(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("触发"))
-    call RemoveUnit(u) //移除死亡单位
-    call BJDebugMsg(I2S(l__i))
-    call BJDebugMsg(I2S('UB15'))
-    if l__i < 'UB15' then //判断是有下一转
-        set u=CreateUnit(Player(11), l__i + 1, x, y, f) //创建下一转
-        call TriggerRegisterUnitEvent(t, u, EVENT_UNIT_DEATH) //注册触发
-        //在此处增加隐藏
-    else
-    endif
-    call FlushChildHashtable(udg_hs, GetHandleId(GetExpiredTimer())) //清除哈希表
-    call DestroyTimer(GetExpiredTimer()) //清除计时器
-    set u=null
-    set p=null
-    set t=null
-endfunction
-function zs takes nothing returns nothing
-    local timer t=CreateTimer()
-    local integer l__i=GetUnitTypeId(GetTriggerUnit())
-    local trigger tr=GetTriggeringTrigger()
-    call DestroyTrigger(tr) //删除触发
-    call SaveUnitHandle(udg_hs, GetHandleId(t), StringHash("转生"), GetTriggerUnit()) //保存死亡单位
-    call SavePlayerHandle(udg_hs, GetHandleId(t), StringHash("玩家"), GetOwningPlayer(GetKillingUnit())) //保存玩家
-    set tr=CreateTrigger() //新建触发
-    call TriggerAddAction(tr, function zs) //添加动作
-    call SaveTriggerHandle(udg_hs, GetHandleId(t), StringHash("触发"), tr) //保存触发
-    call TimerStart(t, 10, false, function zs_1)
-    call BJDebugMsg("6666")
-    set t=null
-    set tr=null
-endfunction
+
 
 //library libyg ends
 //library csh:
@@ -2630,7 +2671,7 @@ endfunction
         call SaveReal(udg_hs, 5, 1, - 4992)
         call SaveReal(udg_hs, 6, 1, 45)
         call SaveInteger(udg_hs, 10, 'IA00', 1)
-        call CreateItem('IA00', - 1216, 1280)
+        call CreateItem('IA00', - 1216, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 2, - 4480)
         call SaveReal(udg_hs, 2, 2, - 2688)
@@ -2639,7 +2680,7 @@ endfunction
         call SaveReal(udg_hs, 5, 2, - 3200)
         call SaveReal(udg_hs, 6, 2, 45)
         call SaveInteger(udg_hs, 10, 'IA01', 2)
-        call CreateItem('IA01', - 1184, 1280)
+        call CreateItem('IA01', - 1184, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 3, - 4480)
         call SaveReal(udg_hs, 2, 3, - 896)
@@ -2648,7 +2689,7 @@ endfunction
         call SaveReal(udg_hs, 5, 3, - 1408)
         call SaveReal(udg_hs, 6, 3, 45)
         call SaveInteger(udg_hs, 10, 'IA02', 3)
-        call CreateItem('IA02', - 1152, 1280)
+        call CreateItem('IA02', - 1152, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 4, - 4480)
         call SaveReal(udg_hs, 2, 4, 896)
@@ -2657,7 +2698,7 @@ endfunction
         call SaveReal(udg_hs, 5, 4, 384)
         call SaveReal(udg_hs, 6, 4, 45)
         call SaveInteger(udg_hs, 10, 'IA03', 4)
-        call CreateItem('IA03', - 1120, 1280)
+        call CreateItem('IA03', - 1120, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 5, - 4480)
         call SaveReal(udg_hs, 2, 5, 2688)
@@ -2666,7 +2707,7 @@ endfunction
         call SaveReal(udg_hs, 5, 5, 2176)
         call SaveReal(udg_hs, 6, 5, 45)
         call SaveInteger(udg_hs, 10, 'IA04', 5)
-        call CreateItem('IA04', - 1088, 1280)
+        call CreateItem('IA04', - 1088, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 6, - 4480)
         call SaveReal(udg_hs, 2, 6, 4480)
@@ -2675,7 +2716,7 @@ endfunction
         call SaveReal(udg_hs, 5, 6, 3968)
         call SaveReal(udg_hs, 6, 6, 45)
         call SaveInteger(udg_hs, 10, 'IA05', 6)
-        call CreateItem('IA05', - 1056, 1280)
+        call CreateItem('IA05', - 1056, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 7, 4992)
         call SaveReal(udg_hs, 2, 7, - 4480)
@@ -2684,7 +2725,7 @@ endfunction
         call SaveReal(udg_hs, 5, 7, - 4480)
         call SaveReal(udg_hs, 6, 7, 0)
         call SaveInteger(udg_hs, 10, 'IA06', 7)
-        call CreateItem('IA06', - 1024, 1280)
+        call CreateItem('IA06', - 1024, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 8, 4992)
         call SaveReal(udg_hs, 2, 8, - 2688)
@@ -2693,7 +2734,7 @@ endfunction
         call SaveReal(udg_hs, 5, 8, - 2688)
         call SaveReal(udg_hs, 6, 8, 0)
         call SaveInteger(udg_hs, 10, 'IA07', 8)
-        call CreateItem('IA07', - 992, 1280)
+        call CreateItem('IA07', - 992, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 9, 4992)
         call SaveReal(udg_hs, 2, 9, - 896)
@@ -2702,7 +2743,7 @@ endfunction
         call SaveReal(udg_hs, 5, 9, - 896)
         call SaveReal(udg_hs, 6, 9, 0)
         call SaveInteger(udg_hs, 10, 'IA08', 9)
-        call CreateItem('IA08', - 960, 1280)
+        call CreateItem('IA08', - 960, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 10, 4992)
         call SaveReal(udg_hs, 2, 10, 896)
@@ -2711,7 +2752,7 @@ endfunction
         call SaveReal(udg_hs, 5, 10, 896)
         call SaveReal(udg_hs, 6, 10, 0)
         call SaveInteger(udg_hs, 10, 'IA09', 10)
-        call CreateItem('IA09', - 928, 1280)
+        call CreateItem('IA09', - 928, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 11, 4992)
         call SaveReal(udg_hs, 2, 11, 2688)
@@ -2720,7 +2761,7 @@ endfunction
         call SaveReal(udg_hs, 5, 11, 2688)
         call SaveReal(udg_hs, 6, 11, 0)
         call SaveInteger(udg_hs, 10, 'IA0A', 11)
-        call CreateItem('IA0A', - 896, 1280)
+        call CreateItem('IA0A', - 896, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 12, 4992)
         call SaveReal(udg_hs, 2, 12, 4480)
@@ -2729,7 +2770,7 @@ endfunction
         call SaveReal(udg_hs, 5, 12, 4480)
         call SaveReal(udg_hs, 6, 12, 0)
         call SaveInteger(udg_hs, 10, 'IA0B', 12)
-        call CreateItem('IA0B', - 864, 1280)
+        call CreateItem('IA0B', - 864, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 13, - 9216)
         call SaveReal(udg_hs, 2, 13, 9216)
@@ -2738,7 +2779,7 @@ endfunction
         call SaveReal(udg_hs, 5, 13, 7936)
         call SaveReal(udg_hs, 6, 13, 0)
         call SaveInteger(udg_hs, 10, 'IA0C', 13)
-        call CreateItem('IA0C', - 832, 1280)
+        call CreateItem('IA0C', - 832, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 14, - 6656)
         call SaveReal(udg_hs, 2, 14, 9216)
@@ -2747,7 +2788,7 @@ endfunction
         call SaveReal(udg_hs, 5, 14, 7936)
         call SaveReal(udg_hs, 6, 14, 0)
         call SaveInteger(udg_hs, 10, 'IA0D', 14)
-        call CreateItem('IA0D', - 800, 1280)
+        call CreateItem('IA0D', - 800, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 15, - 6656)
         call SaveReal(udg_hs, 2, 15, 6656)
@@ -2756,7 +2797,7 @@ endfunction
         call SaveReal(udg_hs, 5, 15, 7936)
         call SaveReal(udg_hs, 6, 15, 0)
         call SaveInteger(udg_hs, 10, 'IA0E', 15)
-        call CreateItem('IA0E', - 768, 1280)
+        call CreateItem('IA0E', - 768, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 16, - 9216)
         call SaveReal(udg_hs, 2, 16, 6656)
@@ -2765,7 +2806,7 @@ endfunction
         call SaveReal(udg_hs, 5, 16, 7936)
         call SaveReal(udg_hs, 6, 16, 0)
         call SaveInteger(udg_hs, 10, 'IA0F', 16)
-        call CreateItem('IA0F', - 736, 1280)
+        call CreateItem('IA0F', - 736, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 17, 6656)
         call SaveReal(udg_hs, 2, 17, 9216)
@@ -2774,7 +2815,7 @@ endfunction
         call SaveReal(udg_hs, 5, 17, 7936)
         call SaveReal(udg_hs, 6, 17, 0)
         call SaveInteger(udg_hs, 10, 'IA0G', 17)
-        call CreateItem('IA0G', - 704, 1280)
+        call CreateItem('IA0G', - 704, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 18, 9216)
         call SaveReal(udg_hs, 2, 18, 9216)
@@ -2783,7 +2824,7 @@ endfunction
         call SaveReal(udg_hs, 5, 18, 7936)
         call SaveReal(udg_hs, 6, 18, 0)
         call SaveInteger(udg_hs, 10, 'IA0H', 18)
-        call CreateItem('IA0H', - 672, 1280)
+        call CreateItem('IA0H', - 672, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 19, 9216)
         call SaveReal(udg_hs, 2, 19, 6656)
@@ -2792,7 +2833,7 @@ endfunction
         call SaveReal(udg_hs, 5, 19, 7936)
         call SaveReal(udg_hs, 6, 19, 0)
         call SaveInteger(udg_hs, 10, 'IA0I', 19)
-        call CreateItem('IA0I', - 640, 1280)
+        call CreateItem('IA0I', - 640, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 20, 6656)
         call SaveReal(udg_hs, 2, 20, 6656)
@@ -2801,7 +2842,7 @@ endfunction
         call SaveReal(udg_hs, 5, 20, 7936)
         call SaveReal(udg_hs, 6, 20, 0)
         call SaveInteger(udg_hs, 10, 'IA0J', 20)
-        call CreateItem('IA0J', - 608, 1280)
+        call CreateItem('IA0J', - 608, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 21, 6656)
         call SaveReal(udg_hs, 2, 21, - 6656)
@@ -2810,7 +2851,7 @@ endfunction
         call SaveReal(udg_hs, 5, 21, - 7936)
         call SaveReal(udg_hs, 6, 21, 0)
         call SaveInteger(udg_hs, 10, 'IA0K', 21)
-        call CreateItem('IA0K', - 576, 1280)
+        call CreateItem('IA0K', - 576, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 22, 9216)
         call SaveReal(udg_hs, 2, 22, - 6656)
@@ -2819,7 +2860,7 @@ endfunction
         call SaveReal(udg_hs, 5, 22, - 7936)
         call SaveReal(udg_hs, 6, 22, 0)
         call SaveInteger(udg_hs, 10, 'IA0L', 22)
-        call CreateItem('IA0L', - 544, 1280)
+        call CreateItem('IA0L', - 544, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 23, 9216)
         call SaveReal(udg_hs, 2, 23, - 9216)
@@ -2828,7 +2869,7 @@ endfunction
         call SaveReal(udg_hs, 5, 23, - 7936)
         call SaveReal(udg_hs, 6, 23, 0)
         call SaveInteger(udg_hs, 10, 'IA0M', 23)
-        call CreateItem('IA0M', - 512, 1280)
+        call CreateItem('IA0M', - 512, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 24, 6656)
         call SaveReal(udg_hs, 2, 24, - 9216)
@@ -2837,7 +2878,7 @@ endfunction
         call SaveReal(udg_hs, 5, 24, - 7936)
         call SaveReal(udg_hs, 6, 24, 0)
         call SaveInteger(udg_hs, 10, 'IA0N', 24)
-        call CreateItem('IA0N', - 480, 1280)
+        call CreateItem('IA0N', - 480, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 25, - 9216)
         call SaveReal(udg_hs, 2, 25, - 6656)
@@ -2846,7 +2887,7 @@ endfunction
         call SaveReal(udg_hs, 5, 25, - 7936)
         call SaveReal(udg_hs, 6, 25, 0)
         call SaveInteger(udg_hs, 10, 'IA0O', 25)
-        call CreateItem('IA0O', - 448, 1280)
+        call CreateItem('IA0O', - 448, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 26, - 6656)
         call SaveReal(udg_hs, 2, 26, - 6656)
@@ -2855,7 +2896,7 @@ endfunction
         call SaveReal(udg_hs, 5, 26, - 7936)
         call SaveReal(udg_hs, 6, 26, 0)
         call SaveInteger(udg_hs, 10, 'IA0P', 26)
-        call CreateItem('IA0P', - 416, 1280)
+        call CreateItem('IA0P', - 416, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 27, - 6656)
         call SaveReal(udg_hs, 2, 27, - 9216)
@@ -2864,7 +2905,7 @@ endfunction
         call SaveReal(udg_hs, 5, 27, - 7936)
         call SaveReal(udg_hs, 6, 27, 0)
         call SaveInteger(udg_hs, 10, 'IA0Q', 27)
-        call CreateItem('IA0Q', - 384, 1280)
+        call CreateItem('IA0Q', - 384, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 28, - 9216)
         call SaveReal(udg_hs, 2, 28, - 9216)
@@ -2873,7 +2914,7 @@ endfunction
         call SaveReal(udg_hs, 5, 28, - 7936)
         call SaveReal(udg_hs, 6, 28, 0)
         call SaveInteger(udg_hs, 10, 'IA0R', 28)
-        call CreateItem('IA0R', - 352, 1280)
+        call CreateItem('IA0R', - 352, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 29, - 7552)
         call SaveReal(udg_hs, 2, 29, - 4480)
@@ -2882,7 +2923,7 @@ endfunction
         call SaveReal(udg_hs, 5, 29, - 4480)
         call SaveReal(udg_hs, 6, 29, 180)
         call SaveInteger(udg_hs, 10, 'IA0S', 29)
-        call CreateItem('IA0S', - 320, 1280)
+        call CreateItem('IA0S', - 320, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 30, - 7552)
         call SaveReal(udg_hs, 2, 30, - 2688)
@@ -2891,7 +2932,7 @@ endfunction
         call SaveReal(udg_hs, 5, 30, - 2688)
         call SaveReal(udg_hs, 6, 30, 180)
         call SaveInteger(udg_hs, 10, 'IA0T', 30)
-        call CreateItem('IA0T', - 288, 1280)
+        call CreateItem('IA0T', - 288, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 31, - 7552)
         call SaveReal(udg_hs, 2, 31, - 896)
@@ -2900,7 +2941,7 @@ endfunction
         call SaveReal(udg_hs, 5, 31, - 896)
         call SaveReal(udg_hs, 6, 31, 180)
         call SaveInteger(udg_hs, 10, 'IA0U', 31)
-        call CreateItem('IA0U', - 256, 1280)
+        call CreateItem('IA0U', - 256, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 32, - 7552)
         call SaveReal(udg_hs, 2, 32, 896)
@@ -2909,7 +2950,7 @@ endfunction
         call SaveReal(udg_hs, 5, 32, 896)
         call SaveReal(udg_hs, 6, 32, 180)
         call SaveInteger(udg_hs, 10, 'IA0V', 32)
-        call CreateItem('IA0V', - 224, 1280)
+        call CreateItem('IA0V', - 224, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 33, - 7040)
         call SaveReal(udg_hs, 2, 33, 2688)
@@ -2918,7 +2959,7 @@ endfunction
         call SaveReal(udg_hs, 5, 33, 2688)
         call SaveReal(udg_hs, 6, 33, 180)
         call SaveInteger(udg_hs, 10, 'IA0W', 33)
-        call CreateItem('IA0W', - 192, 1280)
+        call CreateItem('IA0W', - 192, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 34, - 7552)
         call SaveReal(udg_hs, 2, 34, 4480)
@@ -2927,7 +2968,7 @@ endfunction
         call SaveReal(udg_hs, 5, 34, 4480)
         call SaveReal(udg_hs, 6, 34, 180)
         call SaveInteger(udg_hs, 10, 'IA0X', 34)
-        call CreateItem('IA0X', - 160, 1280)
+        call CreateItem('IA0X', - 160, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 35, - 9344)
         call SaveReal(udg_hs, 2, 35, - 4480)
@@ -2936,7 +2977,7 @@ endfunction
         call SaveReal(udg_hs, 5, 35, - 4480)
         call SaveReal(udg_hs, 6, 35, 180)
         call SaveInteger(udg_hs, 10, 'IA0Y', 35)
-        call CreateItem('IA0Y', - 128, 1280)
+        call CreateItem('IA0Y', - 128, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 36, - 9344)
         call SaveReal(udg_hs, 2, 36, - 2688)
@@ -2945,7 +2986,7 @@ endfunction
         call SaveReal(udg_hs, 5, 36, - 2688)
         call SaveReal(udg_hs, 6, 36, 180)
         call SaveInteger(udg_hs, 10, 'IA0Z', 36)
-        call CreateItem('IA0Z', - 96, 1280)
+        call CreateItem('IA0Z', - 96, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 37, - 9344)
         call SaveReal(udg_hs, 2, 37, - 896)
@@ -2954,7 +2995,7 @@ endfunction
         call SaveReal(udg_hs, 5, 37, - 896)
         call SaveReal(udg_hs, 6, 37, 180)
         call SaveInteger(udg_hs, 10, 'IA10', 37)
-        call CreateItem('IA10', - 64, 1280)
+        call CreateItem('IA10', - 64, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 38, - 9344)
         call SaveReal(udg_hs, 2, 38, 896)
@@ -2963,7 +3004,7 @@ endfunction
         call SaveReal(udg_hs, 5, 38, 896)
         call SaveReal(udg_hs, 6, 38, 180)
         call SaveInteger(udg_hs, 10, 'IA11', 38)
-        call CreateItem('IA11', - 32, 1280)
+        call CreateItem('IA11', - 32, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 39, - 8832)
         call SaveReal(udg_hs, 2, 39, 2688)
@@ -2972,7 +3013,7 @@ endfunction
         call SaveReal(udg_hs, 5, 39, 2688)
         call SaveReal(udg_hs, 6, 39, 180)
         call SaveInteger(udg_hs, 10, 'IA12', 39)
-        call CreateItem('IA12', 0, 1280)
+        call CreateItem('IA12', 0, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 40, - 9344)
         call SaveReal(udg_hs, 2, 40, 4480)
@@ -2981,7 +3022,7 @@ endfunction
         call SaveReal(udg_hs, 5, 40, 4480)
         call SaveReal(udg_hs, 6, 40, 180)
         call SaveInteger(udg_hs, 10, 'IA13', 40)
-        call CreateItem('IA13', 32, 1280)
+        call CreateItem('IA13', 32, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 41, - 4480)
         call SaveReal(udg_hs, 2, 41, 7552)
@@ -2990,7 +3031,7 @@ endfunction
         call SaveReal(udg_hs, 5, 41, 6528)
         call SaveReal(udg_hs, 6, 41, 90)
         call SaveInteger(udg_hs, 10, 'IA14', 41)
-        call CreateItem('IA14', 64, 1280)
+        call CreateItem('IA14', 64, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 42, - 2688)
         call SaveReal(udg_hs, 2, 42, 7552)
@@ -2999,7 +3040,7 @@ endfunction
         call SaveReal(udg_hs, 5, 42, 6528)
         call SaveReal(udg_hs, 6, 42, 90)
         call SaveInteger(udg_hs, 10, 'IA15', 42)
-        call CreateItem('IA15', 96, 1280)
+        call CreateItem('IA15', 96, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 43, - 896)
         call SaveReal(udg_hs, 2, 43, 7552)
@@ -3008,7 +3049,7 @@ endfunction
         call SaveReal(udg_hs, 5, 43, 6528)
         call SaveReal(udg_hs, 6, 43, 90)
         call SaveInteger(udg_hs, 10, 'IA16', 43)
-        call CreateItem('IA16', 128, 1280)
+        call CreateItem('IA16', 128, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 44, 896)
         call SaveReal(udg_hs, 2, 44, 7552)
@@ -3017,7 +3058,7 @@ endfunction
         call SaveReal(udg_hs, 5, 44, 6528)
         call SaveReal(udg_hs, 6, 44, 90)
         call SaveInteger(udg_hs, 10, 'IA17', 44)
-        call CreateItem('IA17', 160, 1280)
+        call CreateItem('IA17', 160, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 45, 2688)
         call SaveReal(udg_hs, 2, 45, 7552)
@@ -3026,7 +3067,7 @@ endfunction
         call SaveReal(udg_hs, 5, 45, 6528)
         call SaveReal(udg_hs, 6, 45, 90)
         call SaveInteger(udg_hs, 10, 'IA18', 45)
-        call CreateItem('IA18', 192, 1280)
+        call CreateItem('IA18', 192, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 46, 4480)
         call SaveReal(udg_hs, 2, 46, 7552)
@@ -3035,7 +3076,7 @@ endfunction
         call SaveReal(udg_hs, 5, 46, 6528)
         call SaveReal(udg_hs, 6, 46, 90)
         call SaveInteger(udg_hs, 10, 'IA19', 46)
-        call CreateItem('IA19', 224, 1280)
+        call CreateItem('IA19', 224, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 47, - 4480)
         call SaveReal(udg_hs, 2, 47, 9344)
@@ -3044,7 +3085,7 @@ endfunction
         call SaveReal(udg_hs, 5, 47, 8320)
         call SaveReal(udg_hs, 6, 47, 90)
         call SaveInteger(udg_hs, 10, 'IA1A', 47)
-        call CreateItem('IA1A', 256, 1280)
+        call CreateItem('IA1A', 256, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 48, - 2688)
         call SaveReal(udg_hs, 2, 48, 9344)
@@ -3053,7 +3094,7 @@ endfunction
         call SaveReal(udg_hs, 5, 48, 8320)
         call SaveReal(udg_hs, 6, 48, 90)
         call SaveInteger(udg_hs, 10, 'IA1B', 48)
-        call CreateItem('IA1B', 288, 1280)
+        call CreateItem('IA1B', 288, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 49, - 896)
         call SaveReal(udg_hs, 2, 49, 9344)
@@ -3062,7 +3103,7 @@ endfunction
         call SaveReal(udg_hs, 5, 49, 8320)
         call SaveReal(udg_hs, 6, 49, 90)
         call SaveInteger(udg_hs, 10, 'IA1C', 49)
-        call CreateItem('IA1C', 320, 1280)
+        call CreateItem('IA1C', 320, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 50, 896)
         call SaveReal(udg_hs, 2, 50, 9344)
@@ -3071,7 +3112,7 @@ endfunction
         call SaveReal(udg_hs, 5, 50, 8320)
         call SaveReal(udg_hs, 6, 50, 90)
         call SaveInteger(udg_hs, 10, 'IA1D', 50)
-        call CreateItem('IA1D', 352, 1280)
+        call CreateItem('IA1D', 352, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 51, 2688)
         call SaveReal(udg_hs, 2, 51, 9344)
@@ -3080,7 +3121,7 @@ endfunction
         call SaveReal(udg_hs, 5, 51, 8320)
         call SaveReal(udg_hs, 6, 51, 90)
         call SaveInteger(udg_hs, 10, 'IA1E', 51)
-        call CreateItem('IA1E', 384, 1280)
+        call CreateItem('IA1E', 384, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 52, 4480)
         call SaveReal(udg_hs, 2, 52, 9344)
@@ -3089,7 +3130,7 @@ endfunction
         call SaveReal(udg_hs, 5, 52, 8320)
         call SaveReal(udg_hs, 6, 52, 90)
         call SaveInteger(udg_hs, 10, 'IA1F', 52)
-        call CreateItem('IA1F', 416, 1280)
+        call CreateItem('IA1F', 416, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 53, 7552)
         call SaveReal(udg_hs, 2, 53, 4480)
@@ -3098,7 +3139,7 @@ endfunction
         call SaveReal(udg_hs, 5, 53, 4480)
         call SaveReal(udg_hs, 6, 53, 0)
         call SaveInteger(udg_hs, 10, 'IA1G', 53)
-        call CreateItem('IA1G', 448, 1280)
+        call CreateItem('IA1G', 448, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 54, 7552)
         call SaveReal(udg_hs, 2, 54, 2688)
@@ -3107,7 +3148,7 @@ endfunction
         call SaveReal(udg_hs, 5, 54, 2688)
         call SaveReal(udg_hs, 6, 54, 0)
         call SaveInteger(udg_hs, 10, 'IA1H', 54)
-        call CreateItem('IA1H', 480, 1280)
+        call CreateItem('IA1H', 480, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 55, 7552)
         call SaveReal(udg_hs, 2, 55, 896)
@@ -3116,7 +3157,7 @@ endfunction
         call SaveReal(udg_hs, 5, 55, 896)
         call SaveReal(udg_hs, 6, 55, 0)
         call SaveInteger(udg_hs, 10, 'IA1I', 55)
-        call CreateItem('IA1I', 512, 1280)
+        call CreateItem('IA1I', 512, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 56, 7552)
         call SaveReal(udg_hs, 2, 56, - 896)
@@ -3125,7 +3166,7 @@ endfunction
         call SaveReal(udg_hs, 5, 56, - 896)
         call SaveReal(udg_hs, 6, 56, 0)
         call SaveInteger(udg_hs, 10, 'IA1J', 56)
-        call CreateItem('IA1J', 544, 1280)
+        call CreateItem('IA1J', 544, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 57, 7552)
         call SaveReal(udg_hs, 2, 57, - 2688)
@@ -3134,7 +3175,7 @@ endfunction
         call SaveReal(udg_hs, 5, 57, - 2688)
         call SaveReal(udg_hs, 6, 57, 0)
         call SaveInteger(udg_hs, 10, 'IA1K', 57)
-        call CreateItem('IA1K', 576, 1280)
+        call CreateItem('IA1K', 576, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 58, 7552)
         call SaveReal(udg_hs, 2, 58, - 4480)
@@ -3143,7 +3184,7 @@ endfunction
         call SaveReal(udg_hs, 5, 58, - 4480)
         call SaveReal(udg_hs, 6, 58, 0)
         call SaveInteger(udg_hs, 10, 'IA1L', 58)
-        call CreateItem('IA1L', 608, 1280)
+        call CreateItem('IA1L', 608, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 59, 9344)
         call SaveReal(udg_hs, 2, 59, 4480)
@@ -3152,7 +3193,7 @@ endfunction
         call SaveReal(udg_hs, 5, 59, 4480)
         call SaveReal(udg_hs, 6, 59, 0)
         call SaveInteger(udg_hs, 10, 'IA1M', 59)
-        call CreateItem('IA1M', 640, 1280)
+        call CreateItem('IA1M', 640, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 60, 9344)
         call SaveReal(udg_hs, 2, 60, 2688)
@@ -3161,7 +3202,7 @@ endfunction
         call SaveReal(udg_hs, 5, 60, 2688)
         call SaveReal(udg_hs, 6, 60, 0)
         call SaveInteger(udg_hs, 10, 'IA1N', 60)
-        call CreateItem('IA1N', 672, 1280)
+        call CreateItem('IA1N', 672, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 61, 9344)
         call SaveReal(udg_hs, 2, 61, 896)
@@ -3170,7 +3211,7 @@ endfunction
         call SaveReal(udg_hs, 5, 61, 896)
         call SaveReal(udg_hs, 6, 61, 0)
         call SaveInteger(udg_hs, 10, 'IA1O', 61)
-        call CreateItem('IA1O', 704, 1280)
+        call CreateItem('IA1O', 704, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 62, 9344)
         call SaveReal(udg_hs, 2, 62, - 896)
@@ -3179,7 +3220,7 @@ endfunction
         call SaveReal(udg_hs, 5, 62, - 896)
         call SaveReal(udg_hs, 6, 62, 0)
         call SaveInteger(udg_hs, 10, 'IA1P', 62)
-        call CreateItem('IA1P', 736, 1280)
+        call CreateItem('IA1P', 736, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 63, 9344)
         call SaveReal(udg_hs, 2, 63, - 2688)
@@ -3188,7 +3229,7 @@ endfunction
         call SaveReal(udg_hs, 5, 63, - 2688)
         call SaveReal(udg_hs, 6, 63, 0)
         call SaveInteger(udg_hs, 10, 'IA1Q', 63)
-        call CreateItem('IA1Q', 768, 1280)
+        call CreateItem('IA1Q', 768, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 64, 9344)
         call SaveReal(udg_hs, 2, 64, - 4480)
@@ -3197,7 +3238,7 @@ endfunction
         call SaveReal(udg_hs, 5, 64, - 4480)
         call SaveReal(udg_hs, 6, 64, 0)
         call SaveInteger(udg_hs, 10, 'IA1R', 64)
-        call CreateItem('IA1R', 800, 1280)
+        call CreateItem('IA1R', 800, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 65, 4480)
         call SaveReal(udg_hs, 2, 65, - 7552)
@@ -3206,7 +3247,7 @@ endfunction
         call SaveReal(udg_hs, 5, 65, - 6528)
         call SaveReal(udg_hs, 6, 65, 270)
         call SaveInteger(udg_hs, 10, 'IA1S', 65)
-        call CreateItem('IA1S', 832, 1280)
+        call CreateItem('IA1S', 832, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 66, 2688)
         call SaveReal(udg_hs, 2, 66, - 7552)
@@ -3215,7 +3256,7 @@ endfunction
         call SaveReal(udg_hs, 5, 66, - 6528)
         call SaveReal(udg_hs, 6, 66, 270)
         call SaveInteger(udg_hs, 10, 'IA1T', 66)
-        call CreateItem('IA1T', 864, 1280)
+        call CreateItem('IA1T', 864, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 67, 896)
         call SaveReal(udg_hs, 2, 67, - 7552)
@@ -3224,7 +3265,7 @@ endfunction
         call SaveReal(udg_hs, 5, 67, - 6528)
         call SaveReal(udg_hs, 6, 67, 270)
         call SaveInteger(udg_hs, 10, 'IA1U', 67)
-        call CreateItem('IA1U', 896, 1280)
+        call CreateItem('IA1U', 896, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 68, - 896)
         call SaveReal(udg_hs, 2, 68, - 7552)
@@ -3233,7 +3274,7 @@ endfunction
         call SaveReal(udg_hs, 5, 68, - 6528)
         call SaveReal(udg_hs, 6, 68, 270)
         call SaveInteger(udg_hs, 10, 'IA1V', 68)
-        call CreateItem('IA1V', 928, 1280)
+        call CreateItem('IA1V', 928, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 69, - 2688)
         call SaveReal(udg_hs, 2, 69, - 7552)
@@ -3242,7 +3283,7 @@ endfunction
         call SaveReal(udg_hs, 5, 69, - 6528)
         call SaveReal(udg_hs, 6, 69, 270)
         call SaveInteger(udg_hs, 10, 'IA1W', 69)
-        call CreateItem('IA1W', 960, 1280)
+        call CreateItem('IA1W', 960, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 70, - 4480)
         call SaveReal(udg_hs, 2, 70, - 7552)
@@ -3251,7 +3292,7 @@ endfunction
         call SaveReal(udg_hs, 5, 70, - 6528)
         call SaveReal(udg_hs, 6, 70, 270)
         call SaveInteger(udg_hs, 10, 'IA1X', 70)
-        call CreateItem('IA1X', 992, 1280)
+        call CreateItem('IA1X', 992, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 71, 4480)
         call SaveReal(udg_hs, 2, 71, - 9344)
@@ -3260,7 +3301,7 @@ endfunction
         call SaveReal(udg_hs, 5, 71, - 8320)
         call SaveReal(udg_hs, 6, 71, 270)
         call SaveInteger(udg_hs, 10, 'IA1Y', 71)
-        call CreateItem('IA1Y', 1024, 1280)
+        call CreateItem('IA1Y', 1024, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 72, 2688)
         call SaveReal(udg_hs, 2, 72, - 9344)
@@ -3269,7 +3310,7 @@ endfunction
         call SaveReal(udg_hs, 5, 72, - 8320)
         call SaveReal(udg_hs, 6, 72, 270)
         call SaveInteger(udg_hs, 10, 'IA1Z', 72)
-        call CreateItem('IA1Z', 1056, 1280)
+        call CreateItem('IA1Z', 1056, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 73, 896)
         call SaveReal(udg_hs, 2, 73, - 9344)
@@ -3278,7 +3319,7 @@ endfunction
         call SaveReal(udg_hs, 5, 73, - 8320)
         call SaveReal(udg_hs, 6, 73, 270)
         call SaveInteger(udg_hs, 10, 'IA20', 73)
-        call CreateItem('IA20', 1088, 1280)
+        call CreateItem('IA20', 1088, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 74, - 896)
         call SaveReal(udg_hs, 2, 74, - 9344)
@@ -3287,7 +3328,7 @@ endfunction
         call SaveReal(udg_hs, 5, 74, - 8320)
         call SaveReal(udg_hs, 6, 74, 270)
         call SaveInteger(udg_hs, 10, 'IA21', 74)
-        call CreateItem('IA21', 1120, 1280)
+        call CreateItem('IA21', 1120, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 75, - 2688)
         call SaveReal(udg_hs, 2, 75, - 9344)
@@ -3296,7 +3337,7 @@ endfunction
         call SaveReal(udg_hs, 5, 75, - 8320)
         call SaveReal(udg_hs, 6, 75, 270)
         call SaveInteger(udg_hs, 10, 'IA22', 75)
-        call CreateItem('IA22', 1152, 1280)
+        call CreateItem('IA22', 1152, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 76, - 4480)
         call SaveReal(udg_hs, 2, 76, - 9344)
@@ -3305,7 +3346,7 @@ endfunction
         call SaveReal(udg_hs, 5, 76, - 8320)
         call SaveReal(udg_hs, 6, 76, 270)
         call SaveInteger(udg_hs, 10, 'IA23', 76)
-        call CreateItem('IA23', 1184, 1280)
+        call CreateItem('IA23', 1184, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 77, 0)
         call SaveReal(udg_hs, 2, 77, 3840)
@@ -3314,7 +3355,7 @@ endfunction
         call SaveReal(udg_hs, 5, 77, - 3840)
         call SaveReal(udg_hs, 6, 77, 90)
         call SaveInteger(udg_hs, 10, 'IA24', 77)
-        call CreateItem('IA24', 1216, 1280)
+        call CreateItem('IA24', 1216, 1280) //测试用
     
         call SaveReal(udg_hs, 1, 78, - 2560)
         call SaveReal(udg_hs, 2, 78, 0)
@@ -3323,7 +3364,7 @@ endfunction
         call SaveReal(udg_hs, 5, 78, 0)
         call SaveReal(udg_hs, 6, 78, 270)
         call SaveInteger(udg_hs, 10, 'IA25', 78)
-        call CreateItem('IA25', 1248, 1280)
+        call CreateItem('IA25', 1248, 1280) //测试用
     
         call SaveInteger(udg_hs, 7, 1, 'uA00')
         
@@ -4016,12 +4057,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(0)), StringHash("进阶场"), 7) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, - 4480, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(0))
+    
     call SaveReal(udg_hs, GetHandleId(Player(0)), StringHash("音量"), 50)
     
     //set ttt=CreateTrigger()//这个后面再做
@@ -4030,12 +4066,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(1)), StringHash("进阶场"), 8) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, - 2688, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(1))
+    
     call SaveReal(udg_hs, GetHandleId(Player(1)), StringHash("音量"), 50)
     
     //set ttt=CreateTrigger()//这个后面再做
@@ -4044,12 +4075,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(2)), StringHash("进阶场"), 9) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, - 896, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(2))
+    
     call SaveReal(udg_hs, GetHandleId(Player(2)), StringHash("音量"), 50)
     
     //set ttt=CreateTrigger()//这个后面再做
@@ -4058,12 +4084,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(3)), StringHash("进阶场"), 10) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, 896, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(3))
+    
     call SaveReal(udg_hs, GetHandleId(Player(3)), StringHash("音量"), 50)
     
     //set ttt=CreateTrigger()//这个后面再做
@@ -4072,12 +4093,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(4)), StringHash("进阶场"), 11) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, 2688, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(4))
+    
     call SaveReal(udg_hs, GetHandleId(Player(4)), StringHash("音量"), 50)
     
     //set ttt=CreateTrigger()//这个后面再做
@@ -4086,12 +4102,7 @@ endfunction
     //call TriggerAddAction(ttt,function jjc)
     //call TriggerRegisterUnitEvent(ttt,unitt,EVENT_UNIT_DEATH)//偷懒
     
-    set ttt=CreateTrigger()
-    call SaveInteger(udg_hs, GetHandleId(Player(5)), StringHash("进阶场"), 12) //保存坐标
-    set unitt=CreateUnit(Player(11), 'UB10', 4992, 4480, 180) //创建单位
-    call TriggerAddAction(ttt, function zs)
-    call TriggerRegisterUnitEvent(ttt, unitt, EVENT_UNIT_DEATH)
-    call SavePlayerHandle(udg_hs, GetHandleId(unitt), StringHash("玩家"), Player(5))
+    
     call SaveReal(udg_hs, GetHandleId(Player(5)), StringHash("音量"), 50)
     
     set unitt=CreateUnit(Player(6), 'hC0B', - 4992, - 4992, 45) //创建练功房
@@ -5074,7 +5085,7 @@ endfunction
     call SaveInteger(udg_hs, 'IB13', 5, 'IB18')
     
     set vx[0]=1
-    set zx[0]=1
+    set zx[0]=0
     set cx[0]=1
     set yx[0]=1
     set fx[0]=1
@@ -5088,7 +5099,7 @@ endfunction
     call SaveInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0], 4052366646 + m[0])
     
     set vx[1]=1
-    set zx[1]=1
+    set zx[1]=0
     set cx[1]=1
     set yx[1]=1
     set fx[1]=1
@@ -5102,7 +5113,7 @@ endfunction
     call SaveInteger(udg_hs, m[1] + StringHash(GetPlayerName(Player(1))), m[1], 4052366646 + m[1])
     
     set vx[2]=1
-    set zx[2]=1
+    set zx[2]=0
     set cx[2]=1
     set yx[2]=1
     set fx[2]=1
@@ -5116,7 +5127,7 @@ endfunction
     call SaveInteger(udg_hs, m[2] + StringHash(GetPlayerName(Player(2))), m[2], 4052366646 + m[2])
     
     set vx[3]=1
-    set zx[3]=1
+    set zx[3]=0
     set cx[3]=1
     set yx[3]=1
     set fx[3]=1
@@ -5130,7 +5141,7 @@ endfunction
     call SaveInteger(udg_hs, m[3] + StringHash(GetPlayerName(Player(3))), m[3], 4052366646 + m[3])
     
     set vx[4]=1
-    set zx[4]=1
+    set zx[4]=0
     set cx[4]=1
     set yx[4]=1
     set fx[4]=1
@@ -5144,7 +5155,7 @@ endfunction
     call SaveInteger(udg_hs, m[4] + StringHash(GetPlayerName(Player(4))), m[4], 4052366646 + m[4])
     
     set vx[5]=1
-    set zx[5]=1
+    set zx[5]=0
     set cx[5]=1
     set yx[5]=1
     set fx[5]=1
@@ -5178,7 +5189,7 @@ endfunction
     
     set ttt=null
     endfunction 
-    function csh__init takes nothing returns nothing
+    function csh___init takes nothing returns nothing
         call LUAcreateunit() //lua初始化，内容在上面
         call input() //输入触发
         call xzyx() //选择英雄初始化
@@ -5203,7 +5214,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Sat Jun 16 07:21:30 2018
+//   Date: Sun Jun 17 10:39:35 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================
@@ -5301,7 +5312,7 @@ function main takes nothing returns nothing
     call SetMapMusic("Music", true, 0)
     call InitBlizzard()
 
-call ExecuteFunc("csh__init")
+call ExecuteFunc("csh___init")
 
     call InitGlobals()
 endfunction

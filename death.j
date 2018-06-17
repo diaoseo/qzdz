@@ -97,7 +97,23 @@ function death_1 takes nothing returns nothing
         set lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]=lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]-1
         call FlushChildHashtable(udg_hs,GetHandleId(u2))
         call RemoveUnit(u2)
+    else
+        if HaveSavedInteger(udg_hs,GetHandleId(u2),51) then
+            set li[2]=LoadInteger(udg_hs,GetHandleId(u2),51)
+            set zx[li[2]]=zx[li[2]]+0.1
+            call BJDebugMsg("恭喜傻逼转生到 "+I2S(R2I((zx[li[2]]*10)+0.5 ) )+" 转")//调试时显示
+            if HaveSavedInteger(udg_hs,GetHandleId(u2),52) then
+                set li[3]=LoadInteger(udg_hs,GetHandleId(u2),52)
+                //在此开启最终进阶动作
+                call BJDebugMsg(I2S(li[3]))
+                call RemoveSavedInteger(udg_hs,GetHandleId(u2),52)
+            endif
+            call RemoveSavedInteger(udg_hs,GetHandleId(u2),51)
+            call RemoveSavedInteger(udg_hs,li[1],51)
+        endif
     endif
+
+
     set u3=null
     set g=null
     set it=null
