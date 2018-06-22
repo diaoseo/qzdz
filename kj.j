@@ -15,7 +15,7 @@ endfunction
 function kj takes nothing returns nothing
     local trigger tr=CreateTrigger()
     call TriggerAddAction(tr,function kj_1)
-    call SaveTriggerHandle(udg_hs,0,StringHash("科技"),tr)
+    call SaveTriggerHandle(udg_hs,0,1008,tr)
     set tr=null
 endfunction
 

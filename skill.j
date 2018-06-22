@@ -4,7 +4,7 @@ library libskill requires libcf
 
 
 function cw_skill takes nothing returns nothing
-    call UnitAddItem(LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),StringHash("英雄")),GetSpellTargetItem())
+    call UnitAddItem(LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),1002),GetSpellTargetItem())
 endfunction
 
 
@@ -34,7 +34,7 @@ function timerhyy takes nothing returns nothing
     local unit u2
     local integer i3=LoadInteger(udg_hs,i1,3)
     local group g
-    local unit u3=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(u1)),StringHash("英雄"))
+    local unit u3=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(u1)),1002)
     if i3==i2 then
         call FlushChildHashtable(udg_hs,i1)
         call DestroyTimer(GetExpiredTimer())
@@ -79,7 +79,7 @@ function timer_2 takes nothing returns nothing
     set li[3]=LoadInteger(udg_hs,li[0],3)
     if li[3]==li[1] then
         set s=LoadReal(udg_hs,li[0],11)
-        set u3=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(u)),StringHash("英雄"))
+        set u3=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(u)),1002)
         loop
             set u2=FirstOfGroup(g2)
             exitwhen u2==null
@@ -142,6 +142,7 @@ function skill_1 takes nothing returns nothing
     local real s//伤害
     local timer t
     local integer id=GetPlayerId(p1)
+    local integer randomint
     set s= (ll+lm+lz)*0.4+(bl+bm+bz)*0.2
     set s=s*(vx[id]+zx[id]+cx[id]+yx[id]+fx[id])
     if GetSpellAbilityId()=='A00I' then//骑士之志
@@ -153,7 +154,7 @@ function skill_1 takes nothing returns nothing
             set u2=FirstOfGroup(g)
             exitwhen u2==null
                 if GetUnitState(u2,UNIT_STATE_LIFE)>0 and IsUnitOwnedByPlayer(u2,Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",GetUnitX(u2),GetUnitY(u2)))//创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Taunt\\TauntCaster.mdl",GetUnitX(u2),GetUnitY(u2)))//创建特效
                     call UnitDamageTarget(u,u2,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
                 endif
                 call GroupRemoveUnit(g,u2)
@@ -200,6 +201,21 @@ function skill_1 takes nothing returns nothing
         call DestroyGroup(g)
     endif
     //无影手技能在此
+    if GetSpellAbilityId()=='A00O' then
+        set randomint=GetRandomInt(1,10)
+        set u2=GetSpellTargetUnit()
+        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Items\\ResourceItems\\ResourceEffectTarget.mdl",GetUnitX(u2),GetUnitY(u2)))//创建特效
+        call UnitDamageTarget(u,u2,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
+        if randomint==1 then
+            call UnitAddItem(u,CreateItem(cl[GetRandomInt(5,32)],GetUnitX(u),GetUnitY(u)))
+        else
+            call UnitAddItem(u,CreateItem(cl[GetRandomInt(1,4)],GetUnitX(u),GetUnitY(u)))
+            call SetPlayerState(p1,PLAYER_STATE_GOLD_GATHERED,GetPlayerState(p1,PLAYER_STATE_GOLD_GATHERED)+R2I (s/10))
+            call DisplayTextToPlayer(p1,0,0,"偷到了金币"+R2S(s/10))
+        endif
+    endif
+
+
     //破甲阵的触发就省下了
 
     if GetSpellAbilityId()=='A00V' then//绝对陷阱
@@ -293,7 +309,12 @@ function skill_1 takes nothing returns nothing
         set f[2]=GetUnitY(GetSpellTargetUnit())
         call SaveInteger(udg_hs,0,105,0)//黑贞德
         call libcf_cf(u,f[1],f[2],0.5,0.025,true,true)
-        call UnitDamageTarget(u,GetSpellTargetUnit(),s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
+        if GetRandomInt(1,100)<10 then
+            call UnitDamageTarget(u,GetSpellTargetUnit(),s*5, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
+        else
+            call UnitDamageTarget(u,GetSpellTargetUnit(),s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
+        endif
+
         call BJDebugMsg(R2S(s))
     endif
 
@@ -325,7 +346,7 @@ function skill_1 takes nothing returns nothing
             set u2=FirstOfGroup(g)
             exitwhen u2==null
                 if GetUnitState(u2,UNIT_STATE_LIFE)>0 and IsUnitOwnedByPlayer(u2,Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",GetUnitX(u2),GetUnitY(u2)))//创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl",GetUnitX(u2),GetUnitY(u2)))//创建特效
                     call UnitDamageTarget(u,u2,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
                 endif
                 call GroupRemoveUnit(g,u2)
@@ -375,12 +396,11 @@ function skill_1 takes nothing returns nothing
         set g=CreateGroup()
         loop
             exitwhen li[0]==9
-            call BJDebugMsg("wtf")
             set u3=CreateUnit(p1,'n000',f[1]+100*li[0]*Cos(f[0]),f[2]+100*li[0]*Sin(f[0]),(180/3.14159)*f[0])
-            call SetUnitScale(u3,2,2,0.5)
+            //call SetUnitScale(u3,1,1,0.5)
             call UnitApplyTimedLife(u3,'BHwe',2)//设置生命周期
             //call AddSpecialEffectTarget("Abilities\\Spells\\Orc\\LiquidFire\\Liquidfire.mdl",u3,"sprite")
-            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Demon\\DarkPortal\\DarkPortalTarget.mdl",u3,"sprite"))
+            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\MarkOfChaos\\MarkOfChaosTarget.mdl",u3,"sprite"))
 
             set f[5]=GetUnitX(u3)
             set f[6]=GetUnitY(u3)
@@ -446,8 +466,9 @@ function skill_1 takes nothing returns nothing
         call FlushChildHashtable(udg_hs,li[0])
         else
         call TimerStart(t,0.5,false,function timer_smjq)
+        call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+li[0]*s)
         endif
-        //加血没写上，没想好加血的公式
+        
         
     endif
 
@@ -459,6 +480,15 @@ function skill_1 takes nothing returns nothing
     if GetSpellAbilityId()=='A01V' then//传送物品
         call UnitAddItem(LoadUnitHandle(udg_hs,GetHandleId(p1),49),GetSpellTargetItem())
     endif
+
+    if GetSpellAbilityId()=='A00H' then//全体大招
+        if LoadBoolean(udg_hs,GetHandleId(p1),210) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1)
+        else
+            call DisplayTextToPlayer(p1,0,0,"你还没有这个技能！")
+        endif
+    endif
+
 
     set g=null
     set u=null
@@ -472,7 +502,7 @@ endfunction
 
 
 function skill_jzxj_1 takes nothing returns nothing
-    local unit u=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),StringHash("英雄"))
+    local unit u=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),1002)
     local integer bl=GetHeroStr(u,false)
     local integer bm=GetHeroAgi(u,false)
     local integer bz=GetHeroInt(u,false)

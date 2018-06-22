@@ -1,14 +1,14 @@
 library libyg requires libmsg
 
 function bossfh takes nothing returns nothing//副本复活触发
-    local integer li=LoadInteger(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("复活boss"))//获取死亡的单位类型
+    local integer li=LoadInteger(udg_hs,GetHandleId(GetExpiredTimer()),333)//获取死亡的单位类型
     local trigger t=LoadTriggerHandle(udg_hs,GetHandleId(GetExpiredTimer()),0)
     local integer zb=LoadInteger(udg_hs,11,li)//获取死亡的坐标
     local real x=LoadReal(udg_hs,1,zb)
     local real y=LoadReal(udg_hs,2,zb)
     local real f=LoadReal(udg_hs,3,zb)
     local unit u1=CreateUnit(Player(11),li,x,y,f)//创建单位
-    call RemoveUnit(LoadUnitHandle(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("单位")))//移除死亡单位
+    call RemoveUnit(LoadUnitHandle(udg_hs,GetHandleId(GetExpiredTimer()),222))//移除死亡单位
     call TriggerRegisterUnitEvent(t,u1,EVENT_UNIT_DEATH)//添加事件到触发器
     call FlushChildHashtable(udg_hs,GetHandleId(GetExpiredTimer()))//清除哈希表
     call DestroyTimer(GetExpiredTimer())//清除计时器
@@ -27,8 +27,8 @@ function yg takes nothing returns nothing//副本死亡触发
     endif
     call TriggerAddAction(tr,function yg)//新触发添加动作
     call DestroyTrigger(GetTriggeringTrigger())//删除触发触发
-    call SaveInteger(udg_hs,GetHandleId(t),StringHash("复活boss"),GetUnitTypeId(GetTriggerUnit()))//保存死亡的类型
-    call SaveUnitHandle(udg_hs,GetHandleId(t),StringHash("单位"),GetTriggerUnit())//保存死亡的单位
+    call SaveInteger(udg_hs,GetHandleId(t),333,GetUnitTypeId(GetTriggerUnit()))//保存死亡的类型
+    call SaveUnitHandle(udg_hs,GetHandleId(t),222,GetTriggerUnit())//保存死亡的单位
     call TimerStart(t,10,false,function bossfh)//启动计时器
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,msg(1)+GetUnitName(GetTriggerUnit())+"已被击杀，10秒后复活")//发消息
     call SaveTriggerHandle(udg_hs,GetHandleId(t),0,tr)//保存触发器
@@ -37,13 +37,13 @@ function yg takes nothing returns nothing//副本死亡触发
 endfunction
 
 function xgfh takes nothing returns nothing
-    local integer li=LoadInteger(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("复活boss"))//获取死亡的单位类型
+    local integer li=LoadInteger(udg_hs,GetHandleId(GetExpiredTimer()),333)//获取死亡的单位类型
     local trigger t=LoadTriggerHandle(udg_hs,GetHandleId(GetExpiredTimer()),0)//读取触发器
     local integer zb=LoadInteger(udg_hs,11,li)//获取死亡的坐标
     local real x=LoadReal(udg_hs,1,zb)
     local real y=LoadReal(udg_hs,2,zb)
     local unit u1=CreateUnit(Player(11),li,x+GetRandomReal(-640,640),y+GetRandomReal(-640,640),GetRandomReal(0,360))//创建单位
-    call RemoveUnit(LoadUnitHandle(udg_hs,GetHandleId(GetExpiredTimer()),StringHash("单位")))//移除死亡单位
+    call RemoveUnit(LoadUnitHandle(udg_hs,GetHandleId(GetExpiredTimer()),222))//移除死亡单位
     call TriggerRegisterUnitEvent(t,u1,EVENT_UNIT_DEATH)//添加事件到触发器
     call FlushChildHashtable(udg_hs,GetHandleId(GetExpiredTimer()))//清除哈希表
     call DestroyTimer(GetExpiredTimer())//清除计时器
@@ -56,8 +56,8 @@ function xg takes nothing returns nothing//小怪死亡触发
     local timer t=CreateTimer()//新建计时器
     local trigger tr=CreateTrigger()//创建新触发
     call DestroyTrigger(GetTriggeringTrigger())//删除触发触发
-    call SaveInteger(udg_hs,GetHandleId(t),StringHash("复活boss"),GetUnitTypeId(GetTriggerUnit()))//保存死亡的类型
-    call SaveUnitHandle(udg_hs,GetHandleId(t),StringHash("单位"),GetTriggerUnit())//保存死亡的单位
+    call SaveInteger(udg_hs,GetHandleId(t),333,GetUnitTypeId(GetTriggerUnit()))//保存死亡的类型
+    call SaveUnitHandle(udg_hs,GetHandleId(t),222,GetTriggerUnit())//保存死亡的单位
     call TimerStart(t,10,false,function xgfh)//启动计时器
     call TriggerAddAction(tr,function xg)//新触发添加动作
     call SaveTriggerHandle(udg_hs,GetHandleId(t),0,tr)//保存触发器

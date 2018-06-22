@@ -2,7 +2,7 @@
 library libdeath
 
 function death_1 takes nothing returns nothing
-    local unit u1=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetKillingUnit())),StringHash("英雄"))
+    local unit u1=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetKillingUnit())),1002)
     local unit u2=GetTriggerUnit()
     local player p1=GetOwningPlayer(u1)
     local integer array li
@@ -21,11 +21,17 @@ function death_1 takes nothing returns nothing
     local real x
     local real y
     local real s//伤害
+    local integer id=GetPlayerId(p1)
 
-    set s=ql+qm+qz
+    set s= (ll+lm+lz)*0.4+(bl+bm+bz)*0.2
+    set s=s*((vx[id]+zx[id]+cx[id]+yx[id]+fx[id])+dx[id]*0.5)
     set li[0]=GetHandleId(u1)
     set li[1]=GetHandleId(p1)
-
+    set li[100]=GetPlayerId(p1)
+    set kx[li[100]]=kx[li[100]]+1
+    if ModuloInteger(kx[li[100]],1500)==0 and dx[li[100]]-1<vx[li[100]]  then//1.5K的经验升级E技能，DX不能大于VX-1
+        set dx[li[100]]=dx[li[100]]+0.1
+    endif
     if HaveSavedHandle(udg_hs,li[1],1) then//检测是否绑定有物品
         set it=LoadItemHandle(udg_hs,li[1],1)//读取绑定的物品
         set li[9]=GetHandleId(it)//读取绑定物品的handle
@@ -86,7 +92,7 @@ function death_1 takes nothing returns nothing
             set u3=FirstOfGroup(g)
             exitwhen u3==null
                 if GetUnitState(u3,UNIT_STATE_LIFE)>0 and IsUnitOwnedByPlayer(u3,Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",GetUnitX(u3),GetUnitY(u3)))//创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",GetUnitX(u3),GetUnitY(u3)))//创建特效
                     call UnitDamageTarget(u1,u3,s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP )//给予伤害
                 endif
                 call GroupRemoveUnit(g,u3)
@@ -95,9 +101,37 @@ function death_1 takes nothing returns nothing
     endif
     if HaveSavedInteger(udg_hs,GetHandleId(u2),666) then//检测是否练功房单位
         set lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]=lgf[LoadInteger(udg_hs,GetHandleId(u2),666)+6]-1
+        if GetUnitTypeId(u2)=='uAA0' then
+            call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.12),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+        else
+            if GetUnitTypeId(u2)=='uAA1' then
+                call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.24),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+            else
+                if GetUnitTypeId(u2)=='uAA2' then
+                    call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.02),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+                else
+                    if GetUnitTypeId(u2)=='uAA3' then
+                        call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.02),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+                    else
+                        if GetUnitTypeId(u2)=='uAA4' then
+                            call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.02),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+                        else
+                            if GetUnitTypeId(u2)=='uAA5' then
+                                call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*0.02),true)//未判断死亡，死亡增加经验不知道有没有效果和影响
+                            endif
+                        endif
+                    endif
+                endif
+            endif
+        endif
         call FlushChildHashtable(udg_hs,GetHandleId(u2))
         call RemoveUnit(u2)
     else
+        if IsUnitType(u2,UNIT_TYPE_HERO) then
+            call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*1.5),true)//为判断死亡，死亡增加经验不知道有没有效果和影响
+        else
+            call AddHeroXP(u1,R2I(300+15*I2R(GetHeroLevel(u1))*(0.3+0.02*I2R(b))),true)//为判断死亡，死亡增加经验不知道有没有效果和影响
+        endif
         if HaveSavedInteger(udg_hs,GetHandleId(u2),51) then
             set li[2]=LoadInteger(udg_hs,GetHandleId(u2),51)
             set zx[li[2]]=zx[li[2]]+0.1
@@ -105,7 +139,12 @@ function death_1 takes nothing returns nothing
             if HaveSavedInteger(udg_hs,GetHandleId(u2),52) then
                 set li[3]=LoadInteger(udg_hs,GetHandleId(u2),52)
                 //在此开启最终进阶动作
-                call BJDebugMsg(I2S(li[3]))
+                if li[3]==0 then
+                    call SaveBoolean(udg_hs,GetHandleId(p1),210,true)
+                else
+                    call SaveBoolean(udg_hs,GetHandleId(p1),210,false)
+                endif
+                call BJDebugMsg(I2S(li[3]))//输出是入灵还是入魔
                 call RemoveSavedInteger(udg_hs,GetHandleId(u2),52)
             endif
             call RemoveSavedInteger(udg_hs,GetHandleId(u2),51)

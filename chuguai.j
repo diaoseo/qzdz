@@ -29,17 +29,17 @@ function chuguai_1 takes nothing returns nothing
         if ModuloInteger(b,7)==0 then
             call cboss() 
         endif
-        call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs,0,StringHash("出怪计时器窗口")),"第"+I2S(b+1)+"波敌人来袭")//修改计时器窗口显示标题
+        call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs,0,1014),"第"+I2S(b+1)+"波敌人来袭")//修改计时器窗口显示标题
     endif
     if b==35 then
-        call DestroyTimerDialog(LoadTimerDialogHandle(udg_hs,0,StringHash("出怪计时器窗口")))//出怪完毕，删除计时器窗口
+        call DestroyTimerDialog(LoadTimerDialogHandle(udg_hs,0,1014))//出怪完毕，删除计时器窗口
         call DestroyTimer(GetExpiredTimer())//删除计时器
     endif
 endfunction
 
 function chuguai takes nothing returns nothing
     local trigger tr = CreateTrigger()
-    call TriggerRegisterTimerExpireEvent(tr,LoadTimerHandle(udg_hs,0,StringHash("出怪计时器")))
+    call TriggerRegisterTimerExpireEvent(tr,LoadTimerHandle(udg_hs,0,1015))
     call TriggerAddAction(tr,function chuguai_1)
     //出怪计时器
     set tr = null

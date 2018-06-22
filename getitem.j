@@ -2,7 +2,7 @@ library libgetitem requires libmsg
 
 
 function getitem_2 takes nothing returns nothing//宠物获得物品
-    local unit u=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),StringHash("英雄"))//读取英雄
+    local unit u=LoadUnitHandle(udg_hs,GetHandleId(GetOwningPlayer(GetTriggerUnit())),1002)//读取英雄
     local item litem=GetManipulatedItem()//获取被操作物品
     local integer ti = GetItemTypeId(litem)//获取被操作物品类型
     local integer ti1=LoadInteger(udg_hs,10,ti)//读取坐标
@@ -89,7 +89,7 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
             loop
                 loop
                     if GetItemTypeId(UnitItemInSlot(u1,li[2]))==LoadInteger(udg_hs,ti,li[1]+1) then//判断单位是否有所需材料
-                        call SaveItemHandle(udg_hs,StringHash("材料"),li[3],UnitItemInSlot(u1,li[2]))//保存判断到的材料
+                        call SaveItemHandle(udg_hs,9999,li[3],UnitItemInSlot(u1,li[2]))//保存判断到的材料
                         set li[3]=li[3]+1//记录材料种类数量
                         set li[2]=5
                         if li[1]==0 then
@@ -104,7 +104,7 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
                 exitwhen li[1]==li[0]//循环所需材料次数
             endloop
             if li[0]==li[3] then//玩家已拥有足够的材料
-                set litem=LoadItemHandle(udg_hs,StringHash("材料"),0)//读取主线材料
+                set litem=LoadItemHandle(udg_hs,9999,0)//读取主线材料
                 set li[5]=GetItemTypeId(litem)//读取主线材料ID
                 set li[6]=LoadInteger(udg_hs,25,li[5])//读取升级对应的等级
                 set li[7]=((li[6]+4)/5)*100//读取升级所需经验
@@ -124,14 +124,14 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
                     if LoadBoolean(udg_hs,ti,10) then//判断是合成还是强化，区别在强化的循环
                         loop//删除多余物品
                             set li[4]=li[4]+1
-                            call RemoveItem(LoadItemHandle(udg_hs,StringHash("材料"),li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs,9999,li[4]))
                             exitwhen li[4]==li[0]
                         endloop
                         //进入强化阶段
                         call UnitAddItem(u1,CreateItem(LoadInteger(udg_hs,li[5],20),GetUnitX(u1),GetUnitY(u1)))
                     else
                         loop//删除多余物品
-                            call RemoveItem(LoadItemHandle(udg_hs,StringHash("材料"),li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs,9999,li[4]))
                             exitwhen li[4]==li[0]
                             set li[4]=li[4]+1
                         endloop
@@ -141,7 +141,7 @@ function getitem_2 takes nothing returns nothing//宠物获得物品
                 endif
 
             endif
-            call FlushChildHashtable(udg_hs,StringHash("材料"))//清空哈希表
+            call FlushChildHashtable(udg_hs,9999)//清空哈希表
         endif
         if lv==3 then//三级五行强化
             set li[0]=0//初始化循环
@@ -288,14 +288,14 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
             set lgf[GetPlayerId(GetOwningPlayer(u1))+12]=ti+738131968
         endif
-        if lv==8 then
+        if lv==8 then//转生
             if ti=='I001' then//进入转生房
                 call UnitAddItem(u1,CreateItem(1229008944+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))
             else
                 if ti=='I002' then//进入转生
                     set li[0]=GetPlayerId(GetOwningPlayer(u1))
                     if true then//足够的钱
-                        if zx[li[0]]<=0.6 then//足够的等级，或者可以转生
+                        if zx[li[0]]<=0.6 and GetHeroLevel(u1)>=li[0]*1000 then//足够的等级，或者可以转生
                             if li[0]>3 then
                                 call UnitAddItem(u1,CreateItem('IA0='+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
                                 if HaveSavedInteger (udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
@@ -318,7 +318,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 else
                     if ti=='I003' or ti=='I004' then//修神或入魔
                         if true then//足够的钱
-                            if zx[li[0]]==0.7 then//足够的等级和转生
+                            if zx[li[0]]==0.7 and GetHeroLevel(u1)>=li[0]*1000 then//足够的等级和转生
                                 if li[0]>3 then
                                     call UnitAddItem(u1,CreateItem('IA0='+GetPlayerId(GetOwningPlayer(u1)),GetUnitX(u1),GetUnitY(u1)))//给予进入转生房的物品
                                     if HaveSavedInteger(udg_hs,GetHandleId(GetOwningPlayer(u1)),51) then
@@ -402,7 +402,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
             loop
                 loop
                     if GetItemTypeId(UnitItemInSlot(u1,li[2]))==LoadInteger(udg_hs,ti,li[1]+1) then//判断单位是否有所需材料
-                        call SaveItemHandle(udg_hs,StringHash("材料"),li[3],UnitItemInSlot(u1,li[2]))//保存判断到的材料
+                        call SaveItemHandle(udg_hs,9999,li[3],UnitItemInSlot(u1,li[2]))//保存判断到的材料
                         set li[3]=li[3]+1//记录材料种类数量
                         set li[2]=5
                         if li[1]==0 then
@@ -417,7 +417,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 exitwhen li[1]==li[0]//循环所需材料次数
             endloop
             if li[0]==li[3] then//玩家已拥有足够的材料
-                set litem=LoadItemHandle(udg_hs,StringHash("材料"),0)//读取主线材料
+                set litem=LoadItemHandle(udg_hs,9999,0)//读取主线材料
                 set li[5]=GetItemTypeId(litem)//读取主线材料ID
                 set li[6]=LoadInteger(udg_hs,25,li[5])//读取升级对应的等级
                 set li[7]=((li[6]+4)/5)*100//读取升级所需经验
@@ -437,14 +437,14 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                     if LoadBoolean(udg_hs,ti,10) then//判断是合成还是强化，区别在强化的循环
                         loop//删除多余物品
                             set li[4]=li[4]+1
-                            call RemoveItem(LoadItemHandle(udg_hs,StringHash("材料"),li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs,9999,li[4]))
                             exitwhen li[4]==li[0]
                         endloop
                         //进入强化阶段
                         call UnitAddItem(u1,CreateItem(LoadInteger(udg_hs,li[5],20),GetUnitX(u1),GetUnitY(u1)))
                     else
                         loop//删除多余物品
-                            call RemoveItem(LoadItemHandle(udg_hs,StringHash("材料"),li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs,9999,li[4]))
                             exitwhen li[4]==li[0]
                             set li[4]=li[4]+1
                         endloop
@@ -454,7 +454,7 @@ function getitem_1 takes nothing returns nothing//英雄获得物品
                 endif
 
             endif
-            call FlushChildHashtable(udg_hs,StringHash("材料"))//清空哈希表
+            call FlushChildHashtable(udg_hs,9999)//清空哈希表
         endif
         if lv==3 then//三级五行强化
             set li[0]=0//初始化循环
@@ -554,13 +554,13 @@ endfunction
 function getitem takes nothing returns nothing
     local trigger tr =CreateTrigger()
     call TriggerAddAction(tr,function getitem_1)
-    call SaveTriggerHandle(udg_hs,0,StringHash("获得物品触发"),tr)
+    call SaveTriggerHandle(udg_hs,0,1004,tr)
     set tr=CreateTrigger()
     call TriggerAddAction(tr,function getitem_2)
-    call SaveTriggerHandle(udg_hs,0,StringHash("宠物获得物品触发"),tr)
+    call SaveTriggerHandle(udg_hs,0,1006,tr)
     set tr=CreateTrigger()
     call TriggerAddAction(tr,function dropitem)
-    call SaveTriggerHandle(udg_hs,0,StringHash("丢弃物品触发"),tr)
+    call SaveTriggerHandle(udg_hs,0,1005,tr)
     set tr=null    
 endfunction
 

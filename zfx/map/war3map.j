@@ -4,7 +4,7 @@ constant boolean LIBRARY_libbgj=true
 //endglobals from libbgj
 //globals from libcf:
 constant boolean LIBRARY_libcf=true
-hashtable libcf___z_h=InitHashtable()
+hashtable libcf__z_h=InitHashtable()
 //endglobals from libcf
 //globals from libchuguai:
 constant boolean LIBRARY_libchuguai=true
@@ -12,6 +12,9 @@ constant boolean LIBRARY_libchuguai=true
 //globals from libdeath:
 constant boolean LIBRARY_libdeath=true
 //endglobals from libdeath
+//globals from libdmb:
+constant boolean LIBRARY_libdmb=true
+//endglobals from libdmb
 //globals from libgy:
 constant boolean LIBRARY_libgy=true
 //endglobals from libgy
@@ -21,15 +24,18 @@ constant boolean LIBRARY_libhg=true
 //globals from libkj:
 constant boolean LIBRARY_libkj=true
 //endglobals from libkj
+//globals from liblvup:
+constant boolean LIBRARY_liblvup=true
+//endglobals from liblvup
 //globals from libmsg:
 constant boolean LIBRARY_libmsg=true
 //endglobals from libmsg
 //globals from libsywp:
 constant boolean LIBRARY_libsywp=true
 //endglobals from libsywp
-//globals from libtime0:
-constant boolean LIBRARY_libtime0=true
-//endglobals from libtime0
+//globals from libtf:
+constant boolean LIBRARY_libtf=true
+//endglobals from libtf
 //globals from libajidi:
 constant boolean LIBRARY_libajidi=true
 //endglobals from libajidi
@@ -54,6 +60,9 @@ constant boolean LIBRARY_libselecthero=true
 //globals from libskill:
 constant boolean LIBRARY_libskill=true
 //endglobals from libskill
+//globals from libtime0:
+constant boolean LIBRARY_libtime0=true
+//endglobals from libtime0
 //globals from libyg:
 constant boolean LIBRARY_libyg=true
 //endglobals from libyg
@@ -90,8 +99,14 @@ real array cx
 real array zx
 real array yx
 real array fx
+real array dx
+integer array kx
 integer array m
 integer array lgf
+multiboard multi
+multiboarditem array multiitem
+integer array cl
+integer array jn
 //endglobals from csh
     // User-defined
 hashtable udg_hs= null
@@ -105,7 +120,7 @@ endglobals
 
 //library libbgj:
 function bgj_1 takes nothing returns nothing
-    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetAttacker())), StringHash("英雄"))
+    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetAttacker())), 1002)
     local integer bl=GetHeroStr(u, false)
     local integer bm=GetHeroAgi(u, false)
     local integer bz=GetHeroInt(u, false)
@@ -122,20 +137,78 @@ function bgj_1 takes nothing returns nothing
     local real y=GetUnitY(u1)
     local real s
     local integer id=GetPlayerId(GetOwningPlayer(u))
+    local integer ids=GetHandleId(GetOwningPlayer(u))
+    local boolean bo
     //伤害系数在这里设置
-    set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
-    set s=s * ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] )
-    call GroupEnumUnitsInRange(l__g, x, y, 600, null)
-    loop
-        set u2=FirstOfGroup(l__g)
-        exitwhen u2 == null
-            if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
-                call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2)))
-                call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+    if IsUnitType(GetAttacker(), UNIT_TYPE_HERO) and GetRandomInt(1, 100) > 95 then
+        set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+        set s=s * ( ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] ) * 100 / GetHeroLevel(u) + dx[id] )
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect(LoadStr(udg_hs, GetUnitTypeId(u), 3), GetUnitX(u2), GetUnitY(u2)))
+                    call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
+    if GetUnitTypeId(u) == 'HA0D' and GetRandomInt(1, 5) == 1 then //黑贞德攻击几率加敏捷
+        call SetHeroInt(u, bm + 2, true)
+    endif
+    if HaveSavedBoolean(udg_hs, ids, 'A00D') and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) then //冰冻天赋
+        set u2=CreateUnit(GetOwningPlayer(u), 'n000', GetUnitX(u), GetUnitY(u), 0)
+        call UnitAddAbility(u2, 'A01X') //添加技能
+        call UnitApplyTimedLife(u2, 'BHwe', 1) //设置生命周期
+        call IssueNeutralTargetOrderById(GetOwningPlayer(u), u2, 852075, u1) //放减速
+    endif
+    if HaveSavedBoolean(udg_hs, ids, 'A00C') and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) then //火焰天赋
+        set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+        set s=s * ( ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] ) * 100 / GetHeroLevel(u) + dx[id] )
+        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\SoulBurn\\SoulBurnbuff.mdl", GetUnitX(u1), GetUnitY(u1)))
+        call UnitDamageTarget(u, u1, s * 0.1, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+    endif
+    if HaveSavedBoolean(udg_hs, ids, 'A00E') and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) then //麻痹天赋
+        set u2=CreateUnit(GetOwningPlayer(u), 'n000', GetUnitX(u), GetUnitY(u), 0)
+        call UnitAddAbility(u2, 'A01Y') //添加技能
+        call UnitApplyTimedLife(u2, 'BHwe', 1) //设置生命周期
+        call IssueNeutralTargetOrderById(GetOwningPlayer(u), u2, 852190, u1) //放诅咒
+    endif
+    if HaveSavedBoolean(udg_hs, ids, 210) and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) then
+        set bo=LoadBoolean(udg_hs, ids, 210)
+        if bo then
+            if GetRandomInt(1, 10) == 1 then
+                call SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) + GetUnitState(u, UNIT_STATE_MAX_LIFE) * 0.1)
             endif
-            call GroupRemoveUnit(l__g, u2)
-    endloop
-    call DestroyGroup(l__g)
+        else
+            if GetRandomInt(1, 10) == 1 then
+                set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+                set s=s * ( ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] ) * 100 / GetHeroLevel(u) + dx[id] )
+                //可创建特效call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\SoulBurn\\SoulBurnbuff.mdl",GetUnitX(u1),GetUnitY(u1)))
+                call UnitDamageTarget(u, u1, s * 8, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP)
+            endif
+        endif
+    endif
+    if HaveSavedBoolean(udg_hs, ids, 'A005') and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) and GetRandomInt(1, 10) == 1 then //火焰天赋
+        set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+        set s=s * ( ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] ) * 100 / GetHeroLevel(u) + dx[id] )
+        set l__g=CreateGroup()
+        set x=GetUnitX(u1)
+        set y=GetUnitY(u1)
+        call GroupEnumUnitsInRange(l__g, x, y, 600, null)
+        loop
+            set u2=FirstOfGroup(l__g)
+            exitwhen u2 == null
+                if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Demon\\RainOfFire\\RainOfFireTarget.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call UnitDamageTarget(u, u2, s * 0.5, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+                endif
+                call GroupRemoveUnit(l__g, u2)
+        endloop
+        call DestroyGroup(l__g)
+    endif
     set l__g=null
     set u=null
     set u1=null
@@ -150,85 +223,85 @@ endfunction
 
 //library libbgj ends
 //library libcf:
-function libcf___hy3 takes nothing returns nothing
-    local unit u=LoadUnitHandle(libcf___z_h, GetHandleId(GetExpiredTimer()), 0)
+function libcf__hy3 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
     call SetUnitTimeScale(u, 0)
-    call FlushChildHashtable(libcf___z_h, GetHandleId(GetExpiredTimer()))
+    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
     call DestroyTimer(GetExpiredTimer())
     set u=null
 endfunction
-function libcf___hy2 takes nothing returns nothing
-    local unit u=LoadUnitHandle(libcf___z_h, GetHandleId(GetExpiredTimer()), 0)
-    local real sj=LoadReal(libcf___z_h, GetHandleId(GetExpiredTimer()), 1)
+function libcf__hy2 takes nothing returns nothing
+    local unit u=LoadUnitHandle(libcf__z_h, GetHandleId(GetExpiredTimer()), 0)
+    local real sj=LoadReal(libcf__z_h, GetHandleId(GetExpiredTimer()), 1)
     local timer t=CreateTimer()
     call SetUnitTimeScale(u, 1)
-    call TimerStart(t, sj, false, function libcf___hy3)
-    call SaveUnitHandle(libcf___z_h, GetHandleId(t), 0, u)
-    call FlushChildHashtable(libcf___z_h, GetHandleId(GetExpiredTimer()))
+    call TimerStart(t, sj, false, function libcf__hy3)
+    call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
+    call FlushChildHashtable(libcf__z_h, GetHandleId(GetExpiredTimer()))
     call DestroyTimer(GetExpiredTimer())
     set u=null
     set t=null
 endfunction
-function libcf___hy1 takes nothing returns nothing
+function libcf__hy1 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
-    local integer li=LoadInteger(libcf___z_h, h, 1)
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
+    local integer li=LoadInteger(libcf__z_h, h, 1)
     if li == 20 then //20级的透明度
         call RemoveUnit(u) //移除单位
         call DestroyTimer(GetExpiredTimer()) //删除到期计时器
-        call FlushChildHashtable(libcf___z_h, h) //清理哈希表
+        call FlushChildHashtable(libcf__z_h, h) //清理哈希表
     else
         set li=li + 1
         call SetUnitVertexColor(u, 255, 255, 255, R2I(( 255 / 20 ) * li)) //设置透明度
-        call SaveInteger(libcf___z_h, h, 1, li) //保存当前透明度层次
+        call SaveInteger(libcf__z_h, h, 1, li) //保存当前透明度层次
     endif
     set u=null
 endfunction
-function libcf___cf_3 takes nothing returns nothing
+function libcf__cf_3 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
     local real ux=GetUnitX(u)
     local real uy=GetUnitY(u)
-    local integer c=LoadInteger(libcf___z_h, h, 1)
-    local integer c1=LoadInteger(libcf___z_h, h, 2)
+    local integer c=LoadInteger(libcf__z_h, h, 1)
+    local integer c1=LoadInteger(libcf__z_h, h, 2)
 local timer t=CreateTimer()
     local integer h1=GetHandleId(t)
     local real gd=GetUnitFlyHeight(u)
-    local real sj=LoadReal(libcf___z_h, h, 5)
+    local real sj=LoadReal(libcf__z_h, h, 5)
     if c1 < c then
-        set u=CreateUnit(GetOwningPlayer(u), LoadInteger(libcf___z_h, h, 99), ux, uy, GetUnitFacing(u)) //创建幻影
+        set u=CreateUnit(GetOwningPlayer(u), LoadInteger(libcf__z_h, h, 99), ux, uy, GetUnitFacing(u)) //创建幻影
         call SetUnitFlyHeight(u, gd, 0) //设置幻影的高度
         call SetUnitVertexColor(u, 255, 255, 255, 0) //设置幻影初始透明度
         call UnitAddAbility(u, 'Arav') //添加风暴之鸦
         call UnitRemoveAbility(u, 'Arav') //删除风暴之鸦
-        call SaveUnitHandle(libcf___z_h, h1, 0, u) //保存单位
-        call TimerStart(t, 0.04, true, function libcf___hy1)
+        call SaveUnitHandle(libcf__z_h, h1, 0, u) //保存单位
+        call TimerStart(t, 0.04, true, function libcf__hy1)
         call SetUnitAnimationByIndex(u, 3)
         call SetUnitTimeScale(u, 10)
         set t=CreateTimer()
-        call SaveUnitHandle(libcf___z_h, GetHandleId(t), 0, u)
-        call SaveReal(libcf___z_h, GetHandleId(t), 1, sj)
-        call TimerStart(t, sj * 0.1 * c1, true, function libcf___hy2)
+        call SaveUnitHandle(libcf__z_h, GetHandleId(t), 0, u)
+        call SaveReal(libcf__z_h, GetHandleId(t), 1, sj)
+        call TimerStart(t, sj * 0.1 * c1, true, function libcf__hy2)
         set c1=c1 + 1
-        call SaveInteger(libcf___z_h, h, 2, c1)
+        call SaveInteger(libcf__z_h, h, 2, c1)
     else
-        call FlushChildHashtable(libcf___z_h, h)
+        call FlushChildHashtable(libcf__z_h, h)
         call DestroyTimer(GetExpiredTimer())
     endif
     set u=null
     set t=null
 endfunction
-function libcf___cf_1 takes nothing returns nothing
+function libcf__cf_1 takes nothing returns nothing
     local integer h=GetHandleId(GetExpiredTimer())
-    local unit u=LoadUnitHandle(libcf___z_h, h, 0)
+    local unit u=LoadUnitHandle(libcf__z_h, h, 0)
     local real ux=GetUnitX(u)
     local real uy=GetUnitY(u)
-    local real a=LoadReal(libcf___z_h, h, 1)
-    local real jl=LoadReal(libcf___z_h, h, 2)
-    local integer c=LoadInteger(libcf___z_h, h, 3)
-    local integer c1=LoadInteger(libcf___z_h, h, 4)
-local boolean ty=LoadBoolean(libcf___z_h, h, 7)
-    local real gd=LoadReal(libcf___z_h, h, 6)
+    local real a=LoadReal(libcf__z_h, h, 1)
+    local real jl=LoadReal(libcf__z_h, h, 2)
+    local integer c=LoadInteger(libcf__z_h, h, 3)
+    local integer c1=LoadInteger(libcf__z_h, h, 4)
+local boolean ty=LoadBoolean(libcf__z_h, h, 7)
+    local real gd=LoadReal(libcf__z_h, h, 6)
     if c1 < c then
         if IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_WALKABILITY) and IsTerrainPathable(ux + jl * Cos(a), uy, PATHING_TYPE_BUILDABILITY) then
         call BJDebugMsg("出事了？")
@@ -248,11 +321,11 @@ local boolean ty=LoadBoolean(libcf___z_h, h, 7)
             endif
         endif
         set c1=c1 + 1
-        call SaveInteger(libcf___z_h, h, 4, c1)
+        call SaveInteger(libcf__z_h, h, 4, c1)
     else
         //call PauseUnit(u,false)
         call DestroyTimer(GetExpiredTimer())
-        call FlushChildHashtable(libcf___z_h, h)
+        call FlushChildHashtable(libcf__z_h, h)
     endif
     set u=null
 endfunction
@@ -265,31 +338,31 @@ function libcf_cf takes unit u,real x,real y,real s1,real s2,boolean yhy,boolean
     local real c=s1 / s2
     local real xjl=jl / c
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf___z_h, h, 0, u) //单位
-    call SaveReal(libcf___z_h, h, 1, Atan2(y - uy, x - ux)) // 角度
-    call SaveReal(libcf___z_h, h, 2, xjl) //每次距离
-    call SaveInteger(libcf___z_h, h, 3, R2I(c)) //刷新次数
-    call TimerStart(t, s2, true, function libcf___cf_1) //冲锋
+    call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
+    call SaveReal(libcf__z_h, h, 1, Atan2(y - uy, x - ux)) // 角度
+    call SaveReal(libcf__z_h, h, 2, xjl) //每次距离
+    call SaveInteger(libcf__z_h, h, 3, R2I(c)) //刷新次数
+    call TimerStart(t, s2, true, function libcf__cf_1) //冲锋
     call SetUnitAnimationByIndex(u, 3)
     if ty then
         call UnitAddAbility(u, 'Arav')
         call UnitRemoveAbility(u, 'Arav')
-        call SaveBoolean(libcf___z_h, h, 7, ty)
-        call SaveReal(libcf___z_h, h, 6, 400 / c) //每次跳跃高度
+        call SaveBoolean(libcf__z_h, h, 7, ty)
+        call SaveReal(libcf__z_h, h, 6, 400 / c) //每次跳跃高度
     endif
     if yhy then
         //call PauseUnit(u,true)
         set t=CreateTimer()
         set h=GetHandleId(t)
-        call SaveUnitHandle(libcf___z_h, h, 0, u) //单位
-        call SaveInteger(libcf___z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
+        call SaveUnitHandle(libcf__z_h, h, 0, u) //单位
+        call SaveInteger(libcf__z_h, h, 1, R2I(s1 / 0.04)) //幻影数量
         if LoadInteger(udg_hs, 0, 105) == 1 then
-            call SaveInteger(libcf___z_h, h, 99, 'n004')
+            call SaveInteger(libcf__z_h, h, 99, 'n004')
         else
-            call SaveInteger(libcf___z_h, h, 99, 'n005')
+            call SaveInteger(libcf__z_h, h, 99, 'n005')
         endif
-        call TimerStart(t, 0.04, true, function libcf___cf_3)
-        call SaveReal(libcf___z_h, h, 5, s2)
+        call TimerStart(t, 0.04, true, function libcf__cf_3)
+        call SaveReal(libcf__z_h, h, 5, s2)
     endif
     set t=null
 endfunction
@@ -305,11 +378,11 @@ function libcf_cf1 takes unit u1,unit u2 returns nothing
     local real xjl=jl / c
     local timer t=CreateTimer()
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf___z_h, h, 0, u1)
-    call SaveReal(libcf___z_h, h, 1, a)
-    call SaveReal(libcf___z_h, h, 2, xjl)
-    call SaveInteger(libcf___z_h, h, 3, R2I(c))
-    call TimerStart(t, 0.04, true, function libcf___cf_1)
+    call SaveUnitHandle(libcf__z_h, h, 0, u1)
+    call SaveReal(libcf__z_h, h, 1, a)
+    call SaveReal(libcf__z_h, h, 2, xjl)
+    call SaveInteger(libcf__z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf__cf_1)
     set t=null
 endfunction
 function libcf_cf2 takes unit u1,unit u2 returns nothing
@@ -324,11 +397,11 @@ function libcf_cf2 takes unit u1,unit u2 returns nothing
     local real xjl=jl / c
     local timer t=CreateTimer()
     local integer h=GetHandleId(t)
-    call SaveUnitHandle(libcf___z_h, h, 0, u1)
-    call SaveReal(libcf___z_h, h, 1, a)
-    call SaveReal(libcf___z_h, h, 2, xjl)
-    call SaveInteger(libcf___z_h, h, 3, R2I(c))
-    call TimerStart(t, 0.04, true, function libcf___cf_1)
+    call SaveUnitHandle(libcf__z_h, h, 0, u1)
+    call SaveReal(libcf__z_h, h, 1, a)
+    call SaveReal(libcf__z_h, h, 2, xjl)
+    call SaveInteger(libcf__z_h, h, 3, R2I(c))
+    call TimerStart(t, 0.04, true, function libcf__cf_1)
     set t=null
 endfunction
 function cfsh_1 takes nothing returns nothing
@@ -438,16 +511,16 @@ function chuguai_1 takes nothing returns nothing
         if ModuloInteger(b, 7) == 0 then
             call cboss()
         endif
-        call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口")), "第" + I2S(b + 1) + "波敌人来袭") //修改计时器窗口显示标题
+        call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, 1014), "第" + I2S(b + 1) + "波敌人来袭") //修改计时器窗口显示标题
     endif
     if b == 35 then
-        call DestroyTimerDialog(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口"))) //出怪完毕，删除计时器窗口
+        call DestroyTimerDialog(LoadTimerDialogHandle(udg_hs, 0, 1014)) //出怪完毕，删除计时器窗口
         call DestroyTimer(GetExpiredTimer()) //删除计时器
     endif
 endfunction
 function chuguai takes nothing returns nothing
     local trigger tr= CreateTrigger()
-    call TriggerRegisterTimerExpireEvent(tr, LoadTimerHandle(udg_hs, 0, StringHash("出怪计时器")))
+    call TriggerRegisterTimerExpireEvent(tr, LoadTimerHandle(udg_hs, 0, 1015))
     call TriggerAddAction(tr, function chuguai_1)
     //出怪计时器
     set tr=null
@@ -456,7 +529,7 @@ endfunction
 //library libchuguai ends
 //library libdeath:
 function death_1 takes nothing returns nothing
-    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetKillingUnit())), StringHash("英雄"))
+    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetKillingUnit())), 1002)
     local unit u2=GetTriggerUnit()
     local player p1=GetOwningPlayer(u1)
     local integer array li
@@ -475,9 +548,16 @@ function death_1 takes nothing returns nothing
     local real x
     local real y
     local real s
-    set s=ql + qm + qz
+    local integer id=GetPlayerId(p1)
+    set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
+    set s=s * ( ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] ) + dx[id] * 0.5 )
     set li[0]=GetHandleId(u1)
     set li[1]=GetHandleId(p1)
+    set li[100]=GetPlayerId(p1)
+    set kx[li[100]]=kx[li[100]] + 1
+    if ModuloInteger(kx[li[100]], 1500) == 0 and dx[li[100]] - 1 < vx[li[100]] then //1.5K的经验升级E技能，DX不能大于VX-1
+        set dx[li[100]]=dx[li[100]] + 0.1
+    endif
     if HaveSavedHandle(udg_hs, li[1], 1) then //检测是否绑定有物品
         set it=LoadItemHandle(udg_hs, li[1], 1) //读取绑定的物品
         set li[9]=GetHandleId(it) //读取绑定物品的handle
@@ -535,7 +615,7 @@ function death_1 takes nothing returns nothing
             set u3=FirstOfGroup(l__g)
             exitwhen u3 == null
                 if GetUnitState(u3, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u3, Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl", GetUnitX(u3), GetUnitY(u3))) //创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl", GetUnitX(u3), GetUnitY(u3))) //创建特效
                     call UnitDamageTarget(u1, u3, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
                 endif
                 call GroupRemoveUnit(l__g, u3)
@@ -544,9 +624,37 @@ function death_1 takes nothing returns nothing
     endif
     if HaveSavedInteger(udg_hs, GetHandleId(u2), 666) then //检测是否练功房单位
         set lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6]=lgf[LoadInteger(udg_hs, GetHandleId(u2), 666) + 6] - 1
+        if GetUnitTypeId(u2) == 'uAA0' then
+            call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.12), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+        else
+            if GetUnitTypeId(u2) == 'uAA1' then
+                call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.24), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+            else
+                if GetUnitTypeId(u2) == 'uAA2' then
+                    call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.02), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+                else
+                    if GetUnitTypeId(u2) == 'uAA3' then
+                        call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.02), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+                    else
+                        if GetUnitTypeId(u2) == 'uAA4' then
+                            call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.02), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+                        else
+                            if GetUnitTypeId(u2) == 'uAA5' then
+                                call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 0.02), true) //未判断死亡，死亡增加经验不知道有没有效果和影响
+                            endif
+                        endif
+                    endif
+                endif
+            endif
+        endif
         call FlushChildHashtable(udg_hs, GetHandleId(u2))
         call RemoveUnit(u2)
     else
+        if IsUnitType(u2, UNIT_TYPE_HERO) then
+            call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * 1.5), true) //为判断死亡，死亡增加经验不知道有没有效果和影响
+        else
+            call AddHeroXP(u1, R2I(300 + 15 * I2R(GetHeroLevel(u1)) * ( 0.3 + 0.02 * I2R(b) )), true) //为判断死亡，死亡增加经验不知道有没有效果和影响
+        endif
         if HaveSavedInteger(udg_hs, GetHandleId(u2), 51) then
             set li[2]=LoadInteger(udg_hs, GetHandleId(u2), 51)
             set zx[li[2]]=zx[li[2]] + 0.1
@@ -554,7 +662,12 @@ function death_1 takes nothing returns nothing
             if HaveSavedInteger(udg_hs, GetHandleId(u2), 52) then
                 set li[3]=LoadInteger(udg_hs, GetHandleId(u2), 52)
                 //在此开启最终进阶动作
-                call BJDebugMsg(I2S(li[3]))
+                if li[3] == 0 then
+                    call SaveBoolean(udg_hs, GetHandleId(p1), 210, true)
+                else
+                    call SaveBoolean(udg_hs, GetHandleId(p1), 210, false)
+                endif
+                call BJDebugMsg(I2S(li[3])) //输出是入灵还是入魔
                 call RemoveSavedInteger(udg_hs, GetHandleId(u2), 52)
             endif
             call RemoveSavedInteger(udg_hs, GetHandleId(u2), 51)
@@ -576,6 +689,62 @@ function death takes nothing returns nothing
 endfunction
 
 //library libdeath ends
+//library libdmb:
+function dmb takes nothing returns nothing
+    local integer array li
+    local string array st
+    set multi=CreateMultiboard()
+    call MultiboardSetColumnCount(multi, 7)
+    call MultiboardSetRowCount(multi, 7)
+    set st[0]="荣誉"
+    set st[1]="玩家名字"
+    set st[2]="英雄"
+    set st[3]="称号"
+    set st[4]="转生"
+    set st[5]="斗者结晶"
+    set st[6]="备用"
+    set li[1]=0
+    set li[2]=0
+    set li[7]=0xFF
+    set li[8]=0x00
+    set li[9]=0x1C
+    set li[10]=0x54
+    set li[11]=0xFF
+    set li[12]=0xFE
+    set li[13]=0x20
+    set li[14]=0x03
+    set li[15]=0x42
+    set li[16]=0xE6
+    set li[17]=0x00
+    set li[18]=0xFC
+    set li[19]=0xA0
+    set li[20]=0xC0
+    set li[21]=0x03
+    set li[22]=0xFF
+    set li[23]=0xB9
+    set li[24]=0x81
+    set li[25]=0x01
+    set li[26]=0x0E
+    set li[27]=0x00
+    call MultiboardSetItemsWidth(multi, 0.03) //所有项目宽度
+    call MultiboardSetItemsStyle(multi, true, false) //所有项目风格
+    loop
+        loop
+            set multiitem[li[1] * 7 + li[2]]=MultiboardGetItem(multi, li[1], li[2]) //绑定多面板项目
+            call MultiboardSetItemValueColor(multiitem[li[1] * 7 + li[2]], li[li[1] + 7], li[li[1] + 14], li[li[1] + 21], 255) //设置项目颜色，红，绿，蓝，透明
+            if li[1] == 6 then
+                call MultiboardSetItemValue(multiitem[li[1] * 7 + li[2]], st[li[2]])
+            endif
+            exitwhen li[2] == 6
+            set li[2]=li[2] + 1
+        endloop
+        exitwhen li[1] == 6
+        set li[1]=li[1] + 1
+        set li[2]=0
+    endloop
+endfunction
+
+//library libdmb ends
 //library libgy:
     function jz_i2s takes integer inputi returns string
     //进制转换
@@ -635,11 +804,36 @@ endfunction
 function kj takes nothing returns nothing
     local trigger tr=CreateTrigger()
     call TriggerAddAction(tr, function kj_1)
-    call SaveTriggerHandle(udg_hs, 0, StringHash("科技"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1008, tr)
     set tr=null
 endfunction
 
 //library libkj ends
+//library liblvup:
+function lvup1 takes nothing returns nothing
+    if GetHeroLevel(GetTriggerUnit()) == 200 or GetHeroLevel(GetTriggerUnit()) == 500 or GetHeroLevel(GetTriggerUnit()) == 800 or GetHeroLevel(GetTriggerUnit()) == 1000 then
+        set jn[20 * GetPlayerId(GetOwningPlayer(GetTriggerUnit())) + 20]=jn[20 * GetPlayerId(GetOwningPlayer(GetTriggerUnit())) + 20] + 1
+        call DisplayTimedTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, 20, "你获得斗魂技能 :" + GetObjectName(jn[jn[20 * GetPlayerId(GetOwningPlayer(GetTriggerUnit())) + 20]]))
+        call SetPlayerAbilityAvailable(GetTriggerPlayer(), jn[jn[20 * GetPlayerId(GetOwningPlayer(GetTriggerUnit())) + 20]], true) //获得一个天赋点
+        call SaveBoolean(udg_hs, GetHandleId(GetTriggerPlayer()), jn[20 * GetPlayerId(GetTriggerPlayer()) + jn[20 * GetPlayerId(GetOwningPlayer(GetTriggerUnit())) + 20]], true) //开启该技能
+        call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, false) //禁用下一页
+        call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, true) //启用下一页
+    endif
+    if GetUnitTypeId(GetTriggerUnit()) == 'HA05' and ( GetHeroLevel(GetTriggerUnit()) == 300 or GetHeroLevel(GetTriggerUnit()) == 600 or GetHeroLevel(GetTriggerUnit()) == 900 ) then
+        call IncUnitAbilityLevel(GetTriggerUnit(), 'A00T')
+    endif
+    if GetUnitTypeId(GetTriggerUnit()) == 'HA08' and ( GetHeroLevel(GetTriggerUnit()) == 300 or GetHeroLevel(GetTriggerUnit()) == 600 or GetHeroLevel(GetTriggerUnit()) == 900 ) then
+        call IncUnitAbilityLevel(GetTriggerUnit(), 'A00Z')
+    endif
+endfunction
+function lvup takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    call TriggerAddAction(tr, function lvup1)
+    call SaveTriggerHandle(udg_hs, 0, 300, tr)
+    set tr=null
+endfunction
+
+//library liblvup ends
 //library libmsg:
 function msg takes integer v returns string
     if v == 1 then
@@ -651,7 +845,7 @@ endfunction
 //library libmsg ends
 //library libsywp:
 function sywp_1 takes nothing returns nothing
-    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
+    local unit u1=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), 1002)
     local unit u2=GetTriggerUnit()
     local item litem=GetManipulatedItem()
     local integer array li
@@ -740,7 +934,100 @@ function sywp_1 takes nothing returns nothing
             endloop
         endif
     endif
-    
+    if li[0] == 'IB39' then //暗淡的斗者意志
+        set li[0]=GetPlayerId(GetOwningPlayer(u1))
+        set kx[li[0]]=kx[li[0]] + 100
+        if ModuloInteger(kx[li[0]], 1500) <= 100 and dx[li[0]] - 1 < vx[li[0]] then //1.5K的经验升级E技能，DX不能大于VX-1
+            set dx[li[0]]=dx[li[0]] + 0.1
+        endif
+    endif
+    if li[0] == 'IB3A' then //绚丽的斗者意志
+        set li[0]=GetPlayerId(GetOwningPlayer(u1))
+        set kx[li[0]]=kx[li[0]] + 500
+        if ModuloInteger(kx[li[0]], 1500) <= 500 and dx[li[0]] - 1 < vx[li[0]] then //1.5K的经验升级E技能，DX不能大于VX-1
+            set dx[li[0]]=dx[li[0]] + 0.1
+        endif
+    endif
+    //开箱子，神器改成可以使用，可分解，宝器改为可分解
+    if li[0] == 'IB32' or li[0] == 'IB33' or li[0] == 'IB34' or li[0] == 'IB35' or li[0] == 'IB36' then
+        set li[1]=li[0] - 'IB31'
+        set li[2]=GetRandomInt(1, 20)
+        if li[1] < 4 then
+            if li[2] <= 12 + li[1] * 2 then
+                set litem=CreateItem(GetRandomInt('IB2O', 'IB2W'), GetUnitX(u2), GetUnitY(u2))
+                call UnitAddItem(u2, litem)
+                call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+            endif
+        else
+            if li[1] == 4 then
+                if li[2] <= 14 then
+                    set litem=CreateItem(GetRandomInt('IB2O', 'IB2W'), GetUnitX(u2), GetUnitY(u2))
+                    call UnitAddItem(u2, litem)
+                    call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                else
+                    if li[2] <= 17 then
+                        set li[3]='IBB0'
+                        set li[4]='IBB3'
+                        set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                        call UnitAddItem(u2, litem)
+                        call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                    else
+                        if li[2] <= 19 then
+                            set li[3]='IBB1'
+                            set li[4]='IBB4'
+                            set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                            call UnitAddItem(u2, litem)
+                            call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                        else
+                            set li[3]='IBB2'
+                            set li[4]='IBB5'
+                            set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                            call UnitAddItem(u2, litem)
+                            call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                        endif
+                    endif
+                endif
+            else
+                if li[2] <= 11 then
+                    set litem=CreateItem(GetRandomInt('IB2O', 'IB2W'), GetUnitX(u2), GetUnitY(u2))
+                    call UnitAddItem(u2, litem)
+                    call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                else
+                    if li[2] <= 15 then
+                        set li[3]='IBB0'
+                        set li[4]='IBB3'
+                        set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                        call UnitAddItem(u2, litem)
+                        call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                    else
+                        if li[2] <= 18 then
+                            set li[3]='IBB1'
+                            set li[4]='IBB4'
+                            set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                            call UnitAddItem(u2, litem)
+                            call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                        else
+                            set li[3]='IBB2'
+                            set li[4]='IBB5'
+                            set litem=CreateItem(li[GetRandomInt(3, 4)], GetUnitX(u2), GetUnitY(u2))
+                            call UnitAddItem(u2, litem)
+                            call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "恭喜 " + GetPlayerName(GetOwningPlayer(u2)) + " 在宝箱中获得 " + GetItemName(litem))
+                        endif
+                    endif
+                endif
+            endif
+        endif
+    endif
+    if li[0] == 'IBB0' or li[0] == 'IBB1' or li[0] == 'IBB2' then
+        call UnitAddAbility(u1, li[0] + 134024960) //添加技能
+        call SetPlayerTechResearched(GetOwningPlayer(u1), li[0] + 149815040, 1) //添加科技
+        call DisplayTimedTextToPlayer(GetLocalPlayer(), 0, 0, 30, GetPlayerName(GetOwningPlayer(u1)) + " 解锁了神器 " + GetObjectName(li[0]))
+    endif
+    if li[0] == 'IBB3' or li[0] == 'IBB4' or li[0] == 'IBB5' then
+        call UnitAddAbility(u1, li[0] + 134024707) //添加技能
+        call SetPlayerTechResearched(GetOwningPlayer(u1), li[0] + 149815293, 1) //添加科技
+        call DisplayTimedTextToPlayer(GetLocalPlayer(), 0, 0, 30, GetPlayerName(GetOwningPlayer(u1)) + " 解锁了神器 " + GetObjectName(li[0]))
+    endif
     set litem=null
     set u1=null
     set u2=null
@@ -758,141 +1045,49 @@ function sywp takes nothing returns nothing
 endfunction
 
 //library libsywp ends
-//library libtime0:
-function sys_cg takes nothing returns nothing
-    local integer li1= - 1
-    local unit unitt
-    local integer loopli=0
-        loop
-            exitwhen li1 == 2
-            set unitt=CreateUnit(Player(11), LoadInteger(udg_hs, 7, b), li1 * 1536, 3840, 270)
-            call IssueNeutralPointOrderById(Player(11), unitt, 851983, 0, - 3840)
-            set loopli=0
-            loop
-                exitwhen loopli == 6
-                call UnitShareVision(unitt, Player(loopli), true) //共享视野
-                set loopli=loopli + 1
+//library libtf:
+function zhan takes nothing returns nothing
+    set jn[201]='A002'
+    set jn[202]='A003'
+    set jn[203]='A004'
+    set jn[204]='A005'
+    set jn[205]='A006'
+    set jn[206]='A007'
+    set jn[207]='A008'
+    set jn[208]='A009'
+    set jn[209]='A00A'
+    set jn[210]='A00B'
+    set jn[211]='A00C'
+    set jn[212]='A00D'
+    set jn[213]='A00E'
+    set jn[214]='A00F'
+    set jn[179]=0
+    loop
+        set jn[0]=0
+        loop //初始化数组
+            exitwhen jn[0] == 14
+            set jn[0]=jn[0] + 1
+            set jn[180 + jn[0]]=jn[200 + jn[0]]
+        endloop
+        set jn[0]=0
+        loop //重新随机数组
+            exitwhen jn[0] == 14 //14个技能
+            set jn[0]=jn[0] + 1 //记录循环次数
+            set jn[178]=GetRandomInt(1, 15 - jn[0]) //获取一个随机数
+            set jn[20 * jn[179] + jn[0]]=jn[180 + jn[178]] //重新分配数组
+            set jn[177]=0 //初始化重新入栈的数组
+            loop //处理栈
+                exitwhen jn[177] == 15 - jn[0] - jn[178]
+                set jn[180 + jn[178] + jn[177]]=jn[180 + jn[178] + jn[177] + 1]
+                set jn[177]=jn[177] + 1
             endloop
-            set li1=li1 + 1
         endloop
-    set g=g - 1
-    set unitt=null
-endfunction
-function time1s takes nothing returns nothing
-    local integer li0=0
-    local integer li1
-    local real x=- 4480
-    local real y=- 4480
-    local unit u
-    set i=i + 1
-    if g > 0 then
-        call sys_cg()
-    endif
-    loop
-        if lgf[li0] == 1 then //前六位表示开启刷怪
-            if lgf[li0 + 6] < 5 then //中间六位表示练功房怪物不足
-                set li1=0
-                loop
-                    exitwhen li1 == 20
-                    set li1=li1 + 1
-                    set u=CreateUnit(Player(11), lgf[li0 + 12], x, y, 225) //末六位表示刷出的怪
-                    call SaveInteger(udg_hs, GetHandleId(u), 666, li0)
-                endloop
-                set lgf[li0 + 6]=lgf[li0 + 6] + 20
-            endif
-        endif
-        exitwhen li0 == 5
-        set li0=li0 + 1
-        set y=y + 1792
+        exitwhen jn[179] == 5
+        set jn[179]=jn[179] + 1
     endloop
-    set u=null
-endfunction
-function xzndjsq takes nothing returns nothing
-    if LoadBoolean(udg_hs, 0, StringHash("已选择难度")) then //判断是否已选择难度
-    else
-    call DialogDisplay(Player(0), LoadDialogHandle(udg_hs, 0, StringHash("选择难度对话框")), false) //取消显示对话框
-    call DialogDestroy(LoadDialogHandle(udg_hs, 0, StringHash("选择难度对话框"))) //删除对话框
-    call SetPlayerTechResearched(Player(11), 'RA00', 1) //默认难度
-    //在这里设置默认难度
-    //以下测试模式使用，实际需要在选择难度后再启动计时器
-    call SaveTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口"), CreateTimerDialog(LoadTimerHandle(udg_hs, 0, StringHash("出怪计时器")))) //保存计时器窗口
-    call TimerStart(LoadTimerHandle(udg_hs, 0, StringHash("出怪计时器")), jsqjg, true, null) //启动计时器
-    call TimerDialogDisplay(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口")), true) //显示计时器窗口
-    call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口")), "第" + I2S(b + 1) + "波") //设置计时器窗口标题
-    //测试模式代码到此
-    endif
-endfunction
-function time0_1 takes nothing returns nothing
-    local timer lti=CreateTimer()
-    local integer array li
-    local dialog dhk
-    local button an
-    local string array str
-    call TimerStart(lti, 1, true, function time1s) //启动难度选择时限计时器
-    call BJDebugMsg(I2S(m[0]))
-    call BJDebugMsg(I2S(StringHash(GetPlayerName(Player(0)))))
-    call BJDebugMsg(I2S(StringHash("0")))
-    call BJDebugMsg(I2S(LoadInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0])))
-    
-    
-    set lti=null
-    set dhk=DialogCreate()
-    call DialogSetMessage(dhk, "选择难度")
-    set li[0]=0
-    set li[1]='1'
-    set li[2]='2'
-    set li[3]='3'
-    set li[4]='4'
-    set li[5]='5'
-    call SaveDialogHandle(udg_hs, 0, StringHash("选择难度对话框"), dhk)
-    //创建对话框
-    loop
-        exitwhen li[0] == 5
-        set li[0]=li[0] + 1
-        set an=DialogAddButton(dhk, msgys("按下对应的数字选择难度( " + msgys(I2S(li[0])) + msgys(" )")), li[li[0]])
-        call SaveInteger(udg_hs, 0, H2I(an), li[0])
-    endloop
-    set an=null
-    call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash("对话框")), dhk)
-    call DialogDisplay(Player(0), dhk, true) //显示对话框给某个玩家，请及时修改
-    set dhk=null
-    call TimerStart(CreateTimer(), 10, false, function xzndjsq)
-    //以下创建作弊菜单
-    set str[1]="开启F3回城(再次点击关闭)"
-    set str[2]="镜头升高"
-    set str[3]="镜头降低"
-    set str[4]="背景音量+"
-    set str[5]="背景音量-"
-    set str[6]="返回"
-    set li[0]=0
-    set li[1]=0
-    loop
-        exitwhen li[0] == 6 //6个玩家
-        set li[0]=li[0] + 1
-        set dhk=DialogCreate()
-        call DialogSetMessage(dhk, "作弊菜单")
-        call SaveDialogHandle(udg_hs, H2I(Player(li[0] - 1)), StringHash("作弊对话框"), dhk)
-        call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash(I2S(li[0]) + "对话框")), dhk)
-        set li[1]=0
-        loop
-            exitwhen li[1] == 6 //6个按钮
-            set li[1]=li[1] + 1
-            set an=DialogAddButton(dhk, str[li[1]], 0)
-            call SaveInteger(udg_hs, 0, H2I(an), li[1])
-        endloop
-        
-        
-    endloop
-endfunction
-function time0 takes nothing returns nothing
-    local trigger tr=CreateTrigger()
-    //逝去0秒
-    call TriggerRegisterTimerEvent(tr, 0, false)
-    call TriggerAddAction(tr, function time0_1)
-    set tr=null
 endfunction
 
-//library libtime0 ends
+//library libtf ends
 //library libajidi:
 function ajidi_3 takes nothing returns nothing
     //call CustomDefeatBJ(GetLocalPlayer(),msgys("失败！"))
@@ -923,14 +1118,16 @@ endfunction
 function choicelv_1 takes nothing returns nothing
     local integer li=LoadInteger(udg_hs, 0, H2I(GetClickedButton()))
     call DisplayTimedTextToPlayer(GetLocalPlayer(), 0, 0, 30, msgys(" 选择了难度 " + I2S(li))) //发消息
-    call SaveBoolean(udg_hs, 0, StringHash("已选择难度"), true) //确认已选择难度
+    call SaveBoolean(udg_hs, 0, 1013, true) //确认已选择难度
     call SetPlayerTechResearched(Player(11), 'RA00', li) //设置难度
     //在这里设置难度
+    call MultiboardSetTitleText(multi, "当前难度 " + I2S(li)) //标题
+    call MultiboardDisplay(multi, true) //显示多面板
     //以下是启动出怪计时器
-    call SaveTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口"), CreateTimerDialog(LoadTimerHandle(udg_hs, 0, StringHash("出怪计时器")))) //保存计时器窗口
-    call TimerStart(LoadTimerHandle(udg_hs, 0, StringHash("出怪计时器")), jsqjg, true, null) //启动出怪计时器
-    call TimerDialogDisplay(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口")), true) //显示计时器窗口
-    call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, StringHash("出怪计时器窗口")), "第" + I2S(b + 1) + "波") //修改计时器窗口标题
+    call SaveTimerDialogHandle(udg_hs, 0, 1014, CreateTimerDialog(LoadTimerHandle(udg_hs, 0, 1015))) //保存计时器窗口
+    call TimerStart(LoadTimerHandle(udg_hs, 0, 1015), jsqjg, true, null) //启动出怪计时器
+    call TimerDialogDisplay(LoadTimerDialogHandle(udg_hs, 0, 1014), true) //显示计时器窗口
+    call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, 1014), "第" + I2S(b + 1) + "波") //修改计时器窗口标题
     call DestroyTrigger(GetTriggeringTrigger()) //删除触发
 endfunction
 
@@ -941,14 +1138,16 @@ function playcd_1 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -970,23 +1169,93 @@ function playcd_1 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1001,14 +1270,16 @@ function playcd_2 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -1030,23 +1301,93 @@ function playcd_2 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1061,14 +1402,16 @@ function playcd_3 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -1090,23 +1433,93 @@ function playcd_3 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1121,14 +1534,16 @@ function playcd_4 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -1150,23 +1565,93 @@ function playcd_4 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1181,14 +1666,16 @@ function playcd_5 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -1210,23 +1697,93 @@ function playcd_5 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1241,14 +1798,16 @@ function playcd_6 takes nothing returns nothing
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77)
     local unit u1
+    local integer xx
+    local integer yy
     if li == 1 then //第一个按钮
-        if LoadBoolean(udg_hs, H2I(p1), StringHash("开启回城")) then //判断已开启回城
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), false) //关闭一键回城
-            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"))) //移除回城单位
+        if LoadBoolean(udg_hs, H2I(p1), 1016) then //判断已开启回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, false) //关闭一键回城
+            call RemoveUnit(LoadUnitHandle(udg_hs, H2I(p1), 1017)) //移除回城单位
         else
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("开启回城"), true) //开启一键回城
+            call SaveBoolean(udg_hs, H2I(p1), 1016, true) //开启一键回城
             set u1=CreateUnit(Player(15), 'HB01', x, y, 90) //创建回城单位
-            call SaveUnitHandle(udg_hs, H2I(p1), StringHash("回城英雄"), u1) //记录回城单位
+            call SaveUnitHandle(udg_hs, H2I(p1), 1017, u1) //记录回城单位
             call SetUnitOwner(u1, p1, true) //改变单位所属
             call SetUnitInvulnerable(u1, true) //设置无敌
             call SetUnitFlyHeight(u1, 10000, 0) //设置高度
@@ -1270,23 +1829,93 @@ function playcd_6 takes nothing returns nothing
         endif
     endif
     if li == 4 then //第四个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x < 100 then
             set x=x + 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
         endif
     endif
     if li == 5 then //第五个按钮
-        set x=LoadReal(udg_hs, GetHandleId(p1), StringHash("音量"))
+        set x=LoadReal(udg_hs, GetHandleId(p1), 1018)
         if x > 1 then
             set x=x - 10
-            call SaveReal(udg_hs, GetHandleId(p1), StringHash("音量"), x)
+            call SaveReal(udg_hs, GetHandleId(p1), 1018, x)
         endif
         if GetLocalPlayer() == p1 then //国际惯例
             call SetMusicVolume(PercentToInt(x, 127))
+        endif
+    endif
+    if li == 6 then //第六个按钮
+        set xx=GetPlayerId(p1)
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90荣誉系数 = " + R2S(vx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90翅膀系数 = " + R2S(cx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90转生系数 = " + R2S(zx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90英雄系数 = " + R2S(yx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90法强系数 = " + R2S(fx[xx]))
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90斗者系数 = " + R2S(dx[xx]))
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 1) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff武器经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 1)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 1)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 1))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 2) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff衣服经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 2)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 2)))) + " / " + I2S(( ( LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 2))) + 4 ) / 5 ) * 100))
+        endif
+        if HaveSavedHandle(udg_hs, GetHandleId(p1), 3) then
+            call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff97ffff护手经验 = " + I2S(LoadInteger(udg_hs, GetHandleId(LoadItemHandle(udg_hs, GetHandleId(p1), 3)), GetItemLevel(LoadItemHandle(udg_hs, GetHandleId(p1), 3)))) + " / " + I2S(LoadInteger(udg_hs, 25, GetItemTypeId(LoadItemHandle(udg_hs, GetHandleId(p1), 3))) * 100))
+        endif
+        call DisplayTimedTextToPlayer(p1, 0, 0, 30, "|cff90ee90仅供参考 Powered By 张耀畅|r")
+    endif
+    if li == 7 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 322), true) //显示选择翅膀对话框
+    endif
+    if li == 8 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 324), true) //显示选择称号对话框
+    endif
+    if li == 9 then
+        call DialogDisplay(p1, LoadDialogHandle(udg_hs, GetHandleId(p1), 323), true) //显示选择称号对话框
+    endif
+    if li > 10 and li < 19 then
+        set xx=li - 10
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 8
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA3@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA3@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
+        endif
+    endif
+    if li > 24 and li < 28 then
+        set xx=li - 24
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 3
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AE0/' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AE0/' + xx)
+            call BJDebugMsg(GetObjectName('AE0/' + xx))
+        endif
+    endif
+    if li > 30 and li < 41 then
+        set xx=li - 30
+        if true then
+            set yy=0
+            set u1=LoadUnitHandle(udg_hs, GetHandleId(p1), 1002)
+            loop
+                exitwhen yy == 10
+                set yy=yy + 1
+                call UnitRemoveAbility(u1, 'AA4@' + yy)
+            endloop
+            call UnitAddAbility(u1, 'AA4@' + xx)
+            call BJDebugMsg(GetObjectName('AA3@' + xx))
         endif
     endif
     set an=null
@@ -1338,7 +1967,7 @@ endfunction
 function fuhuo_2 takes nothing returns nothing
     //复活计时器
     local timer ti1=GetExpiredTimer()
-    local unit lu1=LoadUnitHandle(udg_hs, H2I(ti1), StringHash("复活的英雄"))
+    local unit lu1=LoadUnitHandle(udg_hs, H2I(ti1), 444)
     local real x=LoadReal(udg_hs, 4, 77)
     local real y=LoadReal(udg_hs, 5, 77) + 128
     call ReviveHero(lu1, x, y, true) //复活
@@ -1354,16 +1983,20 @@ endfunction
 function fuhuo_1 takes nothing returns nothing
     //复活触发
     local timer lti
+    if HaveSavedBoolean(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), 'A00B') then //死而后已
+        call SetPlayerState(GetOwningPlayer(GetTriggerUnit()), PLAYER_STATE_RESOURCE_LUMBER, GetPlayerState(GetOwningPlayer(GetTriggerUnit()), PLAYER_STATE_RESOURCE_LUMBER) + b * GetPlayerTechCount(Player(11), 'RA00', true))
+        call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "你在天赋死而后已中获得木材 : " + I2S(b * GetPlayerTechCount(Player(11), 'RA00', true)))
+    endif
     set lti=CreateTimer()
     call TimerStart(lti, 5, false, function fuhuo_2)
-    call SaveUnitHandle(udg_hs, H2I(lti), StringHash("复活的英雄"), GetTriggerUnit())
+    call SaveUnitHandle(udg_hs, H2I(lti), 444, GetTriggerUnit())
     set lti=null
 endfunction
 function fuhuo takes nothing returns nothing
     local trigger tr
     set tr=CreateTrigger()
     //创建英雄死亡触发
-    call SaveTriggerHandle(udg_hs, 0, StringHash("复活英雄"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1003, tr)
     call TriggerAddAction(tr, function fuhuo_1)
     set tr=null
 endfunction
@@ -1371,7 +2004,7 @@ endfunction
 //library libfuhuo ends
 //library libgetitem:
 function getitem_2 takes nothing returns nothing
-    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
+    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), 1002)
     local item litem=GetManipulatedItem()
     local integer ti= GetItemTypeId(litem)
     local integer ti1=LoadInteger(udg_hs, 10, ti)
@@ -1436,7 +2069,7 @@ function getitem_2 takes nothing returns nothing
             loop
                 loop
                     if GetItemTypeId(UnitItemInSlot(u1, li[2])) == LoadInteger(udg_hs, ti, li[1] + 1) then //判断单位是否有所需材料
-                        call SaveItemHandle(udg_hs, StringHash("材料"), li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
+                        call SaveItemHandle(udg_hs, 9999, li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
                         set li[3]=li[3] + 1 //记录材料种类数量
                         set li[2]=5
                         if li[1] == 0 then
@@ -1451,7 +2084,7 @@ function getitem_2 takes nothing returns nothing
                 exitwhen li[1] == li[0] //循环所需材料次数
             endloop
             if li[0] == li[3] then //玩家已拥有足够的材料
-                set litem=LoadItemHandle(udg_hs, StringHash("材料"), 0) //读取主线材料
+                set litem=LoadItemHandle(udg_hs, 9999, 0) //读取主线材料
                 set li[5]=GetItemTypeId(litem) //读取主线材料ID
                 set li[6]=LoadInteger(udg_hs, 25, li[5]) //读取升级对应的等级
                 set li[7]=( ( li[6] + 4 ) / 5 ) * 100 //读取升级所需经验
@@ -1471,14 +2104,14 @@ function getitem_2 takes nothing returns nothing
                     if LoadBoolean(udg_hs, ti, 10) then //判断是合成还是强化，区别在强化的循环
                         loop //删除多余物品
                             set li[4]=li[4] + 1
-                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs, 9999, li[4]))
                             exitwhen li[4] == li[0]
                         endloop
                         //进入强化阶段
                         call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
                     else
                         loop //删除多余物品
-                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs, 9999, li[4]))
                             exitwhen li[4] == li[0]
                             set li[4]=li[4] + 1
                         endloop
@@ -1487,7 +2120,7 @@ function getitem_2 takes nothing returns nothing
                     endif
                 endif
             endif
-            call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
+            call FlushChildHashtable(udg_hs, 9999) //清空哈希表
         endif
         if lv == 3 then //三级五行强化
             set li[0]=0 //初始化循环
@@ -1629,14 +2262,14 @@ function getitem_1 takes nothing returns nothing
             set lgf[GetPlayerId(GetOwningPlayer(u1))]=1
             set lgf[GetPlayerId(GetOwningPlayer(u1)) + 12]=ti + 738131968
         endif
-        if lv == 8 then
+        if lv == 8 then //转生
             if ti == 'I001' then //进入转生房
                 call UnitAddItem(u1, CreateItem(1229008944 + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1)))
             else
                 if ti == 'I002' then //进入转生
                     set li[0]=GetPlayerId(GetOwningPlayer(u1))
                     if true then //足够的钱
-                        if zx[li[0]] <= 0.6 then //足够的等级，或者可以转生
+                        if zx[li[0]] <= 0.6 and GetHeroLevel(u1) >= li[0] * 1000 then //足够的等级，或者可以转生
                             if li[0] > 3 then
                                 call UnitAddItem(u1, CreateItem('IA0=' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
                                 if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
@@ -1659,7 +2292,7 @@ function getitem_1 takes nothing returns nothing
                 else
                     if ti == 'I003' or ti == 'I004' then //修神或入魔
                         if true then //足够的钱
-                            if zx[li[0]] == 0.7 then //足够的等级和转生
+                            if zx[li[0]] == 0.7 and GetHeroLevel(u1) >= li[0] * 1000 then //足够的等级和转生
                                 if li[0] > 3 then
                                     call UnitAddItem(u1, CreateItem('IA0=' + GetPlayerId(GetOwningPlayer(u1)), GetUnitX(u1), GetUnitY(u1))) //给予进入转生房的物品
                                     if HaveSavedInteger(udg_hs, GetHandleId(GetOwningPlayer(u1)), 51) then
@@ -1741,7 +2374,7 @@ function getitem_1 takes nothing returns nothing
             loop
                 loop
                     if GetItemTypeId(UnitItemInSlot(u1, li[2])) == LoadInteger(udg_hs, ti, li[1] + 1) then //判断单位是否有所需材料
-                        call SaveItemHandle(udg_hs, StringHash("材料"), li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
+                        call SaveItemHandle(udg_hs, 9999, li[3], UnitItemInSlot(u1, li[2])) //保存判断到的材料
                         set li[3]=li[3] + 1 //记录材料种类数量
                         set li[2]=5
                         if li[1] == 0 then
@@ -1756,7 +2389,7 @@ function getitem_1 takes nothing returns nothing
                 exitwhen li[1] == li[0] //循环所需材料次数
             endloop
             if li[0] == li[3] then //玩家已拥有足够的材料
-                set litem=LoadItemHandle(udg_hs, StringHash("材料"), 0) //读取主线材料
+                set litem=LoadItemHandle(udg_hs, 9999, 0) //读取主线材料
                 set li[5]=GetItemTypeId(litem) //读取主线材料ID
                 set li[6]=LoadInteger(udg_hs, 25, li[5]) //读取升级对应的等级
                 set li[7]=( ( li[6] + 4 ) / 5 ) * 100 //读取升级所需经验
@@ -1776,14 +2409,14 @@ function getitem_1 takes nothing returns nothing
                     if LoadBoolean(udg_hs, ti, 10) then //判断是合成还是强化，区别在强化的循环
                         loop //删除多余物品
                             set li[4]=li[4] + 1
-                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs, 9999, li[4]))
                             exitwhen li[4] == li[0]
                         endloop
                         //进入强化阶段
                         call UnitAddItem(u1, CreateItem(LoadInteger(udg_hs, li[5], 20), GetUnitX(u1), GetUnitY(u1)))
                     else
                         loop //删除多余物品
-                            call RemoveItem(LoadItemHandle(udg_hs, StringHash("材料"), li[4]))
+                            call RemoveItem(LoadItemHandle(udg_hs, 9999, li[4]))
                             exitwhen li[4] == li[0]
                             set li[4]=li[4] + 1
                         endloop
@@ -1792,7 +2425,7 @@ function getitem_1 takes nothing returns nothing
                     endif
                 endif
             endif
-            call FlushChildHashtable(udg_hs, StringHash("材料")) //清空哈希表
+            call FlushChildHashtable(udg_hs, 9999) //清空哈希表
         endif
         if lv == 3 then //三级五行强化
             set li[0]=0 //初始化循环
@@ -1886,13 +2519,13 @@ endfunction
 function getitem takes nothing returns nothing
     local trigger tr=CreateTrigger()
     call TriggerAddAction(tr, function getitem_1)
-    call SaveTriggerHandle(udg_hs, 0, StringHash("获得物品触发"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1004, tr)
     set tr=CreateTrigger()
     call TriggerAddAction(tr, function getitem_2)
-    call SaveTriggerHandle(udg_hs, 0, StringHash("宠物获得物品触发"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1006, tr)
     set tr=CreateTrigger()
     call TriggerAddAction(tr, function dropitem)
-    call SaveTriggerHandle(udg_hs, 0, StringHash("丢弃物品触发"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1005, tr)
     set tr=null
 endfunction
 
@@ -1906,21 +2539,21 @@ function input_1 takes nothing returns nothing
     local player p1=GetTriggerPlayer()
     local integer tempi=S2I(SubString(s1, 1, 30))
     if s2 == "hg" then //判断输入
-        call hg(LoadUnitHandle(udg_hs, H2I(p1), StringHash("英雄"))) //调用回城函数
+        call hg(LoadUnitHandle(udg_hs, H2I(p1), 1002)) //调用回城函数
     endif
     //call SetPlayerAbilityAvailable(p1,tempi,true)//测试添加技能
     //call SetPlayerAbilityAvailable(p1,1093677105,false)
     //call SetPlayerAbilityAvailable(p1,1093677105,true)
     //call BJDebugMsg(GetObjectName(tempi))
     if s2 == "1" then
-        call IncUnitAbilityLevel(LoadUnitHandle(udg_hs, H2I(p1), StringHash("英雄")), 'A00T')
+        call IncUnitAbilityLevel(LoadUnitHandle(udg_hs, H2I(p1), 1002), 'A00T')
     endif
 endfunction
 function input takes nothing returns nothing
     local trigger tr
         set tr=CreateTrigger()
         //创建输入触发
-        call SaveTriggerHandle(udg_hs, 0, StringHash("输入"), tr)
+        call SaveTriggerHandle(udg_hs, 0, 1011, tr)
         call TriggerAddAction(tr, function input_1)
         set tr=null
 endfunction
@@ -1929,35 +2562,34 @@ endfunction
 //library liblist:
 function list_2 takes nothing returns nothing
     local player p1=LoadPlayerHandle(udg_hs, 0, H2I(GetExpiredTimer()))
-    call SaveBoolean(udg_hs, H2I(p1), StringHash("双击"), false)
+    call SaveBoolean(udg_hs, H2I(p1), 1020, false)
     set p1=null
 endfunction
 function list_1 takes nothing returns nothing
     local unit u1=GetTriggerUnit()
     local integer li=GetUnitTypeId(u1)
     local player p1=GetOwningPlayer(u1)
-    local boolean bool=LoadBoolean(udg_hs, H2I(p1), StringHash("双击"))
+    local boolean bool=LoadBoolean(udg_hs, H2I(p1), 1020)
     local timer t1
-    local dialog dhk=LoadDialogHandle(udg_hs, H2I(p1), StringHash("作弊对话框"))
     if li == 'HB00' then
         if bool then
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("双击"), false) //保存正在双击
+            call SaveBoolean(udg_hs, H2I(p1), 1020, false) //保存正在双击
             if GetLocalPlayer() == p1 then //异步
                 call ClearSelection()
             endif
-            call DialogDisplay(p1, dhk, true) //显示对话框
+            call DialogDisplay(p1, LoadDialogHandle(udg_hs, H2I(p1), 321), true) //显示对话框
         else
             set t1=CreateTimer() //启动计时器
             call TimerStart(t1, 0.5, false, function list_2) //设置计时器回调函数
             call SavePlayerHandle(udg_hs, 0, H2I(t1), p1) //保存handle
-            call SaveBoolean(udg_hs, H2I(p1), StringHash("双击"), true) ///确认已单击
+            call SaveBoolean(udg_hs, H2I(p1), 1020, true) ///确认已单击
             if GetLocalPlayer() == p1 then //异步
                 //call ClearSelection()//清空玩家选择，往后可能取消这个选项，作为宠物使用，条件也需要修改
             endif
         endif
     endif
     if li == 'HB01' then
-        call hg(LoadUnitHandle(udg_hs, H2I(p1), StringHash("英雄"))) //回城函数
+        call hg(LoadUnitHandle(udg_hs, H2I(p1), 1002)) //回城函数
     endif
     set u1=null
     set p1=null
@@ -1965,7 +2597,7 @@ function list_1 takes nothing returns nothing
 endfunction
 function list takes nothing returns nothing
     local trigger tr=CreateTrigger()
-    call SaveTriggerHandle(udg_hs, 0, StringHash("菜单触发"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1007, tr)
     call TriggerAddAction(tr, function list_1)
     set tr=null
 endfunction
@@ -1974,7 +2606,7 @@ endfunction
 //library libselecthero:
 function temptime takes nothing returns nothing
     local player lp= LoadPlayerHandle(udg_hs, H2I(GetExpiredTimer()), 1)
-    call RemoveSavedHandle(udg_hs, H2I(lp), StringHash("当前选择"))
+    call RemoveSavedHandle(udg_hs, H2I(lp), 999)
     call DestroyTimer(GetExpiredTimer())
 endfunction
 function xzyx1 takes nothing returns nothing
@@ -1983,25 +2615,53 @@ function xzyx1 takes nothing returns nothing
     local integer li2
     local unit u1
     if GetOwningPlayer(GetTriggerUnit()) == Player(15) then //判断选择的英雄是否玩家16
-        if HaveSavedHandle(udg_hs, H2I(GetTriggerPlayer()), StringHash("英雄")) then //判断玩家是否已选英雄
+        if HaveSavedHandle(udg_hs, H2I(GetTriggerPlayer()), 1002) then //判断玩家是否已选英雄
             call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 10, msgys("你已经选择了英雄!"))
         else
-            if LoadUnitHandle(udg_hs, H2I(GetTriggerPlayer()), StringHash("当前选择")) == GetTriggerUnit() then //判断玩家当前选择是同一个英雄
+            if LoadUnitHandle(udg_hs, H2I(GetTriggerPlayer()), 999) == GetTriggerUnit() then //判断玩家当前选择是同一个英雄
                 call SetUnitOwner(GetTriggerUnit(), GetTriggerPlayer(), true) //改变单位所有者
-                call SaveUnitHandle(udg_hs, H2I(GetTriggerPlayer()), StringHash("英雄"), GetTriggerUnit()) //记录玩家英雄
-                set li2=LoadInteger(udg_hs, 0, StringHash("已选择数量")) //同下
-                call SaveInteger(udg_hs, 0, StringHash("已选择数量"), li2 + 1) //记录已选择英雄的人数
+                call SaveUnitHandle(udg_hs, H2I(GetTriggerPlayer()), 1002, GetTriggerUnit()) //记录玩家英雄
+                //开始设置多面板数据
+                set li2=GetPlayerId(GetTriggerPlayer())
+                call MultiboardSetItemValue(multiitem[li2 * 7], "最强王者") //荣誉
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 1], GetPlayerName(GetTriggerPlayer())) //玩家名
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 2], GetUnitName(GetTriggerUnit())) //英雄
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 3], "最强输出") //称号
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 4], "普通") //进阶
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 5], "88888888") //结晶
+                call MultiboardSetItemValue(multiitem[li2 * 7 + 6], "屠杀野猪捡奶酪V2.0") //备用
+                //结束设置多面板数据
+                set li2=LoadInteger(udg_hs, 0, 1001) //同下
+                call SaveInteger(udg_hs, 0, 1001, li2 + 1) //记录已选择英雄的人数
                 call SetUnitX(GetTriggerUnit(), LoadReal(udg_hs, 4, 77)) //设置坐标
                 call SetUnitY(GetTriggerUnit(), LoadReal(udg_hs, 5, 77) + 128) //同上
-                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("复活英雄")), GetTriggerUnit(), EVENT_UNIT_DEATH) //注册复活英雄事件
+                set yx[GetPlayerId(GetTriggerPlayer())]=LoadReal(udg_hs, 30, GetUnitTypeId(GetTriggerUnit())) //设置英雄系数
+                call SetPlayerAbilityAvailable(GetTriggerPlayer(), jn[20 * GetPlayerId(GetTriggerPlayer()) + 1], true) //开局获得一个天赋点
+                call SaveBoolean(udg_hs, GetHandleId(GetTriggerPlayer()), jn[20 * GetPlayerId(GetTriggerPlayer()) + 1], true) //开启该技能
+                call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, false) //禁用下一页
+                call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, true) //启用下一页
+                set jn[20 * GetPlayerId(GetTriggerPlayer()) + 20]=1
+                if GetUnitTypeId(GetTriggerUnit()) == 'HA0G' then //神代魔术师
+                    call SetPlayerAbilityAvailable(GetTriggerPlayer(), jn[20 * GetPlayerId(GetTriggerPlayer()) + 2], true) //开局获得一个天赋点
+                    call SaveBoolean(udg_hs, GetHandleId(GetTriggerPlayer()), jn[20 * GetPlayerId(GetTriggerPlayer()) + 2], true) //开启该技能
+                    call SetPlayerAbilityAvailable(GetTriggerPlayer(), jn[20 * GetPlayerId(GetTriggerPlayer()) + 3], true) //开局获得一个天赋点
+                    call SaveBoolean(udg_hs, GetHandleId(GetTriggerPlayer()), jn[20 * GetPlayerId(GetTriggerPlayer()) + 3], true) //开启该技能
+                    call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, false) //禁用下一页
+                    call SetPlayerAbilityAvailable(GetTriggerPlayer(), 1093677105, true) //启用下一页
+                    set jn[20 * GetPlayerId(GetTriggerPlayer()) + 20]=3
+                endif
+                set jn[20 * GetPlayerId(GetTriggerPlayer()) + 19]=0 //用来限制购买的天赋
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 300), GetTriggerUnit(), EVENT_UNIT_HERO_LEVEL) //注册英雄升级事件
+                //set yx[GetPlayerId(GetTriggerPlayer())]=LoadReal(udg_hs,31,GetUnitTypeId(GetTriggerUnit()))//设置法强系数
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 1003), GetTriggerUnit(), EVENT_UNIT_DEATH) //注册复活英雄事件
                 call DisplayTimedTextToPlayer(GetLocalPlayer(), 0, 0, 10, msgys(GetPlayerName(GetTriggerPlayer()) + " 选择了 " + GetObjectName(GetUnitTypeId(GetTriggerUnit())))) //发送消息
                 call SetUnitInvulnerable(GetTriggerUnit(), false) //取消无敌
-                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("获得物品触发")), GetTriggerUnit(), EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
-                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("丢弃物品触发")), GetTriggerUnit(), EVENT_UNIT_DROP_ITEM) //注册单位丢弃物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 1004), GetTriggerUnit(), EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 1005), GetTriggerUnit(), EVENT_UNIT_DROP_ITEM) //注册单位丢弃物品事件
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 99), GetTriggerUnit(), EVENT_UNIT_SPELL_EFFECT) //注册发动技能效果事件
                 set u1=CreateUnit(Player(15), 'HB00', LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77), LoadReal(udg_hs, 6, 77)) //创建菜单英雄
-                call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("菜单触发")), GetTriggerPlayer(), EVENT_PLAYER_UNIT_SELECTED, null) //再次注册选择单位触发
-                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("科技")), u1, EVENT_UNIT_RESEARCH_FINISH) //注册科技共享触发
+                call TriggerRegisterPlayerUnitEvent(LoadTriggerHandle(udg_hs, 0, 1007), GetTriggerPlayer(), EVENT_PLAYER_UNIT_SELECTED, null) //再次注册选择单位触发
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 1008), u1, EVENT_UNIT_RESEARCH_FINISH) //注册科技共享触发
                 call SetUnitOwner(u1, GetTriggerPlayer(), true) //改变单位所有者
                 call SuspendHeroXP(u1, true) //禁止菜单英雄获得经验
                 call SetUnitInvulnerable(u1, true) //设置无敌
@@ -2011,7 +2671,7 @@ function xzyx1 takes nothing returns nothing
                     call SetUnitFlyHeight(u1, 0, 0) //异步高度
                 endif
                 set u1=CreateUnit(GetTriggerPlayer(), 'hCZZ', LoadReal(udg_hs, 4, 77), LoadReal(udg_hs, 5, 77) + 256, LoadReal(udg_hs, 6, 77)) //创建宠物
-                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, StringHash("宠物获得物品触发")), u1, EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
+                call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 1006), u1, EVENT_UNIT_PICKUP_ITEM) //注册单位获得物品事件
                 call SaveUnitHandle(udg_hs, GetHandleId(GetTriggerPlayer()), 49, u1) //存储宠物
                 call SetUnitInvulnerable(u1, true) //设置无敌
                 call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 102), u1, EVENT_UNIT_SPELL_EFFECT) //注册宠物发动技能效果事件
@@ -2019,7 +2679,7 @@ function xzyx1 takes nothing returns nothing
                 if GetUnitTypeId(GetTriggerUnit()) == 'HA07' then //注册召唤事件
                     call TriggerRegisterUnitEvent(LoadTriggerHandle(udg_hs, 0, 101), GetTriggerUnit(), EVENT_UNIT_SUMMON)
                 endif
-                if li2 + 1 == LoadInteger(udg_hs, 0, StringHash("游戏人数")) then //判断所有人都选了英雄
+                if li2 + 1 == LoadInteger(udg_hs, 0, 1009) then //判断所有人都选了英雄
                     call DisableTrigger(GetTriggeringTrigger()) //关闭触发
                     call DestroyTrigger(GetTriggeringTrigger()) //删除触发
                     loop
@@ -2030,10 +2690,12 @@ function xzyx1 takes nothing returns nothing
                         set li1=li1 + 1
                     endloop
                     call FlushChildHashtable(udg_hs, 8) //清空哈希表
+                    call RemoveSavedInteger(udg_hs, 0, 1001)
+                    call RemoveSavedHandle(udg_hs, 0, 1010)
                 endif
             else
-                call SaveUnitHandle(udg_hs, H2I(GetTriggerPlayer()), StringHash("当前选择"), GetTriggerUnit()) //存储临时选择
-                call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 10, msgys("你选择了 " + GetObjectName(GetUnitTypeId(GetTriggerUnit())) + " 确认请双击！")) //信息
+                call SaveUnitHandle(udg_hs, H2I(GetTriggerPlayer()), 999, GetTriggerUnit()) //存储临时选择
+                call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 10, "你选择了  【" + msgys(GetObjectName(GetUnitTypeId(GetTriggerUnit()))) + "】  确认请双击！") //信息
                 set tti=CreateTimer() //创建双击计时器
                 call TimerStart(tti, 0.5, false, function temptime) //计时器回调和启动
                 call SavePlayerHandle(udg_hs, H2I(tti), 1, GetTriggerPlayer()) //保存玩家handle到计时器
@@ -2045,13 +2707,13 @@ endfunction
 function xzyx takes nothing returns nothing
     local integer li=0
     local trigger tr=CreateTrigger()
-    call SaveTriggerHandle(udg_hs, 0, StringHash("选择英雄触发"), tr)
+    call SaveTriggerHandle(udg_hs, 0, 1010, tr)
     loop
         exitwhen li == 6
             if ( ( GetPlayerSlotState(Player(li)) == PLAYER_SLOT_STATE_PLAYING ) and ( GetPlayerController(Player(li)) != MAP_CONTROL_COMPUTER ) ) then
                 call TriggerRegisterPlayerUnitEvent(tr, Player(li), EVENT_PLAYER_UNIT_SELECTED, null)
-                call SaveInteger(udg_hs, 0, StringHash("游戏人数"), LoadInteger(udg_hs, 0, StringHash("游戏人数")) + 1)
-                call TriggerRegisterPlayerChatEvent(LoadTriggerHandle(udg_hs, 0, StringHash("输入")), Player(li), "-", false)
+                call SaveInteger(udg_hs, 0, 1009, LoadInteger(udg_hs, 0, 1009) + 1)
+                call TriggerRegisterPlayerChatEvent(LoadTriggerHandle(udg_hs, 0, 1011), Player(li), "-", false)
             endif
             set li=li + 1
     endloop
@@ -2062,7 +2724,7 @@ endfunction
 //library libselecthero ends
 //library libskill:
 function cw_skill takes nothing returns nothing
-    call UnitAddItem(LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄")), GetSpellTargetItem())
+    call UnitAddItem(LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), 1002), GetSpellTargetItem())
 endfunction
 function timer_smjq takes nothing returns nothing
     local timer t=GetExpiredTimer()
@@ -2087,7 +2749,7 @@ function timerhyy takes nothing returns nothing
     local unit u2
     local integer i3=LoadInteger(udg_hs, i1, 3)
     local group l__g
-    local unit u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), StringHash("英雄"))
+    local unit u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u1)), 1002)
     if i3 == i2 then
         call FlushChildHashtable(udg_hs, i1)
         call DestroyTimer(GetExpiredTimer())
@@ -2129,7 +2791,7 @@ function timer_2 takes nothing returns nothing
     set li[3]=LoadInteger(udg_hs, li[0], 3)
     if li[3] == li[1] then
         set s=LoadReal(udg_hs, li[0], 11)
-        set u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u)), StringHash("英雄"))
+        set u3=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(u)), 1002)
         loop
             set u2=FirstOfGroup(g2)
             exitwhen u2 == null
@@ -2188,6 +2850,7 @@ function skill_1 takes nothing returns nothing
     local real s
     local timer t
     local integer id=GetPlayerId(p1)
+    local integer randomint
     set s=( ll + lm + lz ) * 0.4 + ( bl + bm + bz ) * 0.2
     set s=s * ( vx[id] + zx[id] + cx[id] + yx[id] + fx[id] )
     if GetSpellAbilityId() == 'A00I' then //骑士之志
@@ -2199,7 +2862,7 @@ function skill_1 takes nothing returns nothing
             set u2=FirstOfGroup(l__g)
             exitwhen u2 == null
                 if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Taunt\\TauntCaster.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
                     call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
                 endif
                 call GroupRemoveUnit(l__g, u2)
@@ -2244,6 +2907,19 @@ function skill_1 takes nothing returns nothing
         call DestroyGroup(l__g)
     endif
     //无影手技能在此
+    if GetSpellAbilityId() == 'A00O' then
+        set randomint=GetRandomInt(1, 10)
+        set u2=GetSpellTargetUnit()
+        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Items\\ResourceItems\\ResourceEffectTarget.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+        call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        if randomint == 1 then
+            call UnitAddItem(u, CreateItem(cl[GetRandomInt(5, 32)], GetUnitX(u), GetUnitY(u)))
+        else
+            call UnitAddItem(u, CreateItem(cl[GetRandomInt(1, 4)], GetUnitX(u), GetUnitY(u)))
+            call SetPlayerState(p1, PLAYER_STATE_GOLD_GATHERED, GetPlayerState(p1, PLAYER_STATE_GOLD_GATHERED) + R2I(s / 10))
+            call DisplayTextToPlayer(p1, 0, 0, "偷到了金币" + R2S(s / 10))
+        endif
+    endif
     //破甲阵的触发就省下了
     if GetSpellAbilityId() == 'A00V' then //绝对陷阱
         set u1=GetSpellTargetUnit()
@@ -2331,7 +3007,11 @@ function skill_1 takes nothing returns nothing
         set f[2]=GetUnitY(GetSpellTargetUnit())
         call SaveInteger(udg_hs, 0, 105, 0) //黑贞德
         call libcf_cf(u , f[1] , f[2] , 0.5 , 0.025 , true , true)
-        call UnitDamageTarget(u, GetSpellTargetUnit(), s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        if GetRandomInt(1, 100) < 10 then
+            call UnitDamageTarget(u, GetSpellTargetUnit(), s * 5, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        else
+            call UnitDamageTarget(u, GetSpellTargetUnit(), s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
+        endif
         call BJDebugMsg(R2S(s))
     endif
     if GetSpellAbilityId() == 'A01A' then //狂风不止
@@ -2359,7 +3039,7 @@ function skill_1 takes nothing returns nothing
             set u2=FirstOfGroup(l__g)
             exitwhen u2 == null
                 if GetUnitState(u2, UNIT_STATE_LIFE) > 0 and IsUnitOwnedByPlayer(u2, Player(11)) then
-                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
+                    call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl", GetUnitX(u2), GetUnitY(u2))) //创建特效
                     call UnitDamageTarget(u, u2, s, true, false, ATTACK_TYPE_NORMAL, DAMAGE_TYPE_UNIVERSAL, WEAPON_TYPE_METAL_LIGHT_CHOP) //给予伤害
                 endif
                 call GroupRemoveUnit(l__g, u2)
@@ -2403,12 +3083,11 @@ function skill_1 takes nothing returns nothing
         set l__g=CreateGroup()
         loop
             exitwhen li[0] == 9
-            call BJDebugMsg("wtf")
             set u3=CreateUnit(p1, 'n000', f[1] + 100 * li[0] * Cos(f[0]), f[2] + 100 * li[0] * Sin(f[0]), ( 180 / 3.14159 ) * f[0])
-            call SetUnitScale(u3, 2, 2, 0.5)
+            //call SetUnitScale(u3,1,1,0.5)
             call UnitApplyTimedLife(u3, 'BHwe', 2) //设置生命周期
             //call AddSpecialEffectTarget("Abilities\\Spells\\Orc\\LiquidFire\\Liquidfire.mdl",u3,"sprite")
-            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Demon\\DarkPortal\\DarkPortalTarget.mdl", u3, "sprite"))
+            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\MarkOfChaos\\MarkOfChaosTarget.mdl", u3, "sprite"))
             set f[5]=GetUnitX(u3)
             set f[6]=GetUnitY(u3)
             call GroupEnumUnitsInRange(l__g, f[5], f[6], 200, null)
@@ -2469,8 +3148,9 @@ function skill_1 takes nothing returns nothing
         call FlushChildHashtable(udg_hs, li[0])
         else
         call TimerStart(t, 0.5, false, function timer_smjq)
+        call SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) + li[0] * s)
         endif
-        //加血没写上，没想好加血的公式
+        
         
     endif
     if GetSpellAbilityId() == 'A01G' then //血流爆炸
@@ -2478,6 +3158,13 @@ function skill_1 takes nothing returns nothing
     endif
     if GetSpellAbilityId() == 'A01V' then //传送物品
         call UnitAddItem(LoadUnitHandle(udg_hs, GetHandleId(p1), 49), GetSpellTargetItem())
+    endif
+    if GetSpellAbilityId() == 'A00H' then //全体大招
+        if LoadBoolean(udg_hs, GetHandleId(p1), 210) then
+            call SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) + GetUnitState(u, UNIT_STATE_MAX_LIFE) * 0.1)
+        else
+            call DisplayTextToPlayer(p1, 0, 0, "你还没有这个技能！")
+        endif
     endif
     set l__g=null
     set u=null
@@ -2488,7 +3175,7 @@ function skill_1 takes nothing returns nothing
     set t=null
 endfunction
 function skill_jzxj_1 takes nothing returns nothing
-    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), StringHash("英雄"))
+    local unit u=LoadUnitHandle(udg_hs, GetHandleId(GetOwningPlayer(GetTriggerUnit())), 1002)
     local integer bl=GetHeroStr(u, false)
     local integer bm=GetHeroAgi(u, false)
     local integer bz=GetHeroInt(u, false)
@@ -2542,16 +3229,219 @@ function skill takes nothing returns nothing
 endfunction
 
 //library libskill ends
+//library libtime0:
+function sys_cg takes nothing returns nothing
+    local integer li1= - 1
+    local unit unitt
+    local integer loopli=0
+        loop
+            exitwhen li1 == 2
+            set unitt=CreateUnit(Player(11), LoadInteger(udg_hs, 7, b), li1 * 1536, 3840, 270)
+            call IssueNeutralPointOrderById(Player(11), unitt, 851983, 0, - 3840)
+            set loopli=0
+            loop
+                exitwhen loopli == 6
+                call UnitShareVision(unitt, Player(loopli), true) //共享视野
+                set loopli=loopli + 1
+            endloop
+            set li1=li1 + 1
+        endloop
+    set g=g - 1
+    set unitt=null
+endfunction
+function time1s takes nothing returns nothing
+    local integer li0=0
+    local integer li1
+    local real x=- 4480
+    local real y=- 4480
+    local unit u
+    set i=i + 1
+    if g > 0 then
+        call sys_cg()
+    endif
+    loop
+        if lgf[li0] == 1 then //前六位表示开启刷怪
+            if lgf[li0 + 6] < 5 then //中间六位表示练功房怪物不足
+                set li1=0
+                loop
+                    exitwhen li1 == 20
+                    set li1=li1 + 1
+                    set u=CreateUnit(Player(11), lgf[li0 + 12], x, y, 225) //末六位表示刷出的怪
+                    call SaveInteger(udg_hs, GetHandleId(u), 666, li0)
+                endloop
+                set lgf[li0 + 6]=lgf[li0 + 6] + 20
+            endif
+        endif
+        exitwhen li0 == 5
+        set li0=li0 + 1
+        set y=y + 1792
+    endloop
+    set u=null
+endfunction
+function xzndjsq takes nothing returns nothing
+    if LoadBoolean(udg_hs, 0, 1013) then //判断是否已选择难度
+    else
+    call DialogDisplay(Player(0), LoadDialogHandle(udg_hs, 0, StringHash("选择难度对话框")), false) //取消显示对话框
+    call DialogDestroy(LoadDialogHandle(udg_hs, 0, StringHash("选择难度对话框"))) //删除对话框
+    call SetPlayerTechResearched(Player(11), 'RA00', 1) //默认难度
+    //在这里设置默认难度
+    call MultiboardSetTitleText(multi, "当前难度 1 ") //标题
+    call MultiboardDisplay(multi, true) //显示多面板
+    //以下测试模式使用，实际需要在选择难度后再启动计时器
+    call SaveTimerDialogHandle(udg_hs, 0, 1014, CreateTimerDialog(LoadTimerHandle(udg_hs, 0, 1015))) //保存计时器窗口
+    call TimerStart(LoadTimerHandle(udg_hs, 0, 1015), jsqjg, true, null) //启动计时器
+    call TimerDialogDisplay(LoadTimerDialogHandle(udg_hs, 0, 1014), true) //显示计时器窗口
+    call TimerDialogSetTitle(LoadTimerDialogHandle(udg_hs, 0, 1014), "第" + I2S(b + 1) + "波") //设置计时器窗口标题
+    //测试模式代码到此
+    endif
+endfunction
+function time0_1 takes nothing returns nothing
+    local timer lti=CreateTimer()
+    local integer array li
+    local dialog dhk
+    local button an
+    local string array str
+    call TimerStart(lti, 1, true, function time1s) //启动难度选择时限计时器
+    call BJDebugMsg(I2S(m[0]))
+    call BJDebugMsg(I2S(StringHash(GetPlayerName(Player(0)))))
+    call BJDebugMsg(I2S(StringHash("0")))
+    call BJDebugMsg(I2S(LoadInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0])))
+    set lti=null
+    set dhk=DialogCreate()
+    call DialogSetMessage(dhk, "选择难度")
+    set li[0]=0
+    set li[1]='1'
+    set li[2]='2'
+    set li[3]='3'
+    set li[4]='4'
+    set li[5]='5'
+    call SaveDialogHandle(udg_hs, 0, StringHash("选择难度对话框"), dhk)
+    //创建对话框
+    loop
+        exitwhen li[0] == 5
+        set li[0]=li[0] + 1
+        set an=DialogAddButton(dhk, msgys("按下对应的数字选择难度( " + msgys(I2S(li[0])) + msgys(" )")), li[li[0]])
+        call SaveInteger(udg_hs, 0, H2I(an), li[0])
+    endloop
+    
+    call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash("对话框")), dhk)
+    call DialogDisplay(Player(0), dhk, true) //显示对话框给某个玩家，请及时修改
+    call TimerStart(CreateTimer(), 10, false, function xzndjsq)
+    //以下创建作弊菜单
+    set str[1]="开启F3回城(再次点击关闭)"
+    set str[2]="镜头升高"
+    set str[3]="镜头降低"
+    set str[4]="背景音量+"
+    set str[5]="背景音量-"
+    set str[6]="查看隐藏信息"
+    set str[7]="切换翅膀"
+    set str[8]="切换神器"
+    set str[9]="切换称号"
+    set str[10]="返回"
+    set str[11]="1号翅膀"
+    set str[12]="2号翅膀"
+    set str[13]="3号翅膀"
+    set str[14]="4号翅膀"
+    set str[15]="5号翅膀"
+    set str[16]="6号翅膀"
+    set str[17]="7号翅膀"
+    set str[18]="8号翅膀"
+    set str[19]=str[10]
+    set str[25]="1号神器"
+    set str[26]="2号神器"
+    set str[27]="3号神器"
+    set str[28]=str[10]
+    set str[31]="1号称号"
+    set str[32]="2号称号"
+    set str[33]="3号称号"
+    set str[34]="4号称号"
+    set str[35]="5号称号"
+    set str[36]="6号称号"
+    set str[37]="7号称号"
+    set str[38]="8号称号"
+    set str[39]="9号称号"
+    set str[40]="10号称号"
+    set str[41]=str[10]
+    set li[0]=0
+    set li[1]=0
+    loop
+        exitwhen li[0] == 6 //6个玩家
+        set li[0]=li[0] + 1
+        set dhk=DialogCreate()
+        call DialogSetMessage(dhk, "作弊菜单")
+        call SaveDialogHandle(udg_hs, H2I(Player(li[0] - 1)), 321, dhk)
+        call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash(I2S(li[0]) + "对话框")), dhk)
+        //基础作弊菜单
+        set li[1]=0
+        loop
+            exitwhen li[1] == 10 //10个按钮
+            set li[1]=li[1] + 1
+            set an=DialogAddButton(dhk, str[li[1]], 0)
+            call SaveInteger(udg_hs, 0, H2I(an), li[1])
+        endloop
+        //选择翅膀菜单
+        set dhk=DialogCreate()
+        call DialogSetMessage(dhk, "选择翅膀")
+        call SaveDialogHandle(udg_hs, H2I(Player(li[0] - 1)), 322, dhk)
+        call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash(I2S(li[0]) + "对话框")), dhk)
+        set li[1]=10
+        loop
+            exitwhen li[1] == 19 //9个按钮
+            set li[1]=li[1] + 1
+            set an=DialogAddButton(dhk, str[li[1]], 0)
+            call SaveInteger(udg_hs, 0, H2I(an), li[1])
+        endloop
+        //选择神器菜单
+        set dhk=DialogCreate()
+        call DialogSetMessage(dhk, "选择神器")
+        call SaveDialogHandle(udg_hs, H2I(Player(li[0] - 1)), 324, dhk)
+        call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash(I2S(li[0]) + "对话框")), dhk)
+        set li[1]=24
+        loop
+            exitwhen li[1] == 28 //4个按钮
+            set li[1]=li[1] + 1
+            set an=DialogAddButton(dhk, str[li[1]], 0)
+            call SaveInteger(udg_hs, 0, H2I(an), li[1])
+        endloop
+        //选择称号菜单
+        set dhk=DialogCreate()
+        //call DialogSetMessage(dhk,"选择称号")
+        call SaveDialogHandle(udg_hs, H2I(Player(li[0] - 1)), 323, dhk)
+        call TriggerRegisterDialogEvent(LoadTriggerHandle(udg_hs, 0, StringHash(I2S(li[0]) + "对话框")), dhk)
+        set li[1]=30
+        loop
+            exitwhen li[1] == 41 //11个按钮
+            set li[1]=li[1] + 1
+            set an=DialogAddButton(dhk, str[li[1]], 0)
+            call SaveInteger(udg_hs, 0, H2I(an), li[1])
+        endloop
+        
+        
+    endloop
+    call dmb() //创建多面板
+    
+    set an=null
+    set dhk=null
+endfunction
+function time0 takes nothing returns nothing
+    local trigger tr=CreateTrigger()
+    //逝去0秒
+    call TriggerRegisterTimerEvent(tr, 0, false)
+    call TriggerAddAction(tr, function time0_1)
+    set tr=null
+endfunction
+
+//library libtime0 ends
 //library libyg:
 function bossfh takes nothing returns nothing
-    local integer li=LoadInteger(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("复活boss"))
+    local integer li=LoadInteger(udg_hs, GetHandleId(GetExpiredTimer()), 333)
     local trigger t=LoadTriggerHandle(udg_hs, GetHandleId(GetExpiredTimer()), 0)
     local integer zb=LoadInteger(udg_hs, 11, li)
     local real x=LoadReal(udg_hs, 1, zb)
     local real y=LoadReal(udg_hs, 2, zb)
     local real f=LoadReal(udg_hs, 3, zb)
     local unit u1=CreateUnit(Player(11), li, x, y, f)
-    call RemoveUnit(LoadUnitHandle(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("单位"))) //移除死亡单位
+    call RemoveUnit(LoadUnitHandle(udg_hs, GetHandleId(GetExpiredTimer()), 222)) //移除死亡单位
     call TriggerRegisterUnitEvent(t, u1, EVENT_UNIT_DEATH) //添加事件到触发器
     call FlushChildHashtable(udg_hs, GetHandleId(GetExpiredTimer())) //清除哈希表
     call DestroyTimer(GetExpiredTimer()) //清除计时器
@@ -2568,8 +3458,8 @@ function yg takes nothing returns nothing
     endif
     call TriggerAddAction(tr, function yg) //新触发添加动作
     call DestroyTrigger(GetTriggeringTrigger()) //删除触发触发
-    call SaveInteger(udg_hs, GetHandleId(t), StringHash("复活boss"), GetUnitTypeId(GetTriggerUnit())) //保存死亡的类型
-    call SaveUnitHandle(udg_hs, GetHandleId(t), StringHash("单位"), GetTriggerUnit()) //保存死亡的单位
+    call SaveInteger(udg_hs, GetHandleId(t), 333, GetUnitTypeId(GetTriggerUnit())) //保存死亡的类型
+    call SaveUnitHandle(udg_hs, GetHandleId(t), 222, GetTriggerUnit()) //保存死亡的单位
     call TimerStart(t, 10, false, function bossfh) //启动计时器
     call DisplayTextToPlayer(GetLocalPlayer(), 0, 0, msg(1) + GetUnitName(GetTriggerUnit()) + "已被击杀，10秒后复活") //发消息
     call SaveTriggerHandle(udg_hs, GetHandleId(t), 0, tr) //保存触发器
@@ -2577,13 +3467,13 @@ function yg takes nothing returns nothing
     set tr=null
 endfunction
 function xgfh takes nothing returns nothing
-    local integer li=LoadInteger(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("复活boss"))
+    local integer li=LoadInteger(udg_hs, GetHandleId(GetExpiredTimer()), 333)
     local trigger t=LoadTriggerHandle(udg_hs, GetHandleId(GetExpiredTimer()), 0)
     local integer zb=LoadInteger(udg_hs, 11, li)
     local real x=LoadReal(udg_hs, 1, zb)
     local real y=LoadReal(udg_hs, 2, zb)
     local unit u1=CreateUnit(Player(11), li, x + GetRandomReal(- 640, 640), y + GetRandomReal(- 640, 640), GetRandomReal(0, 360))
-    call RemoveUnit(LoadUnitHandle(udg_hs, GetHandleId(GetExpiredTimer()), StringHash("单位"))) //移除死亡单位
+    call RemoveUnit(LoadUnitHandle(udg_hs, GetHandleId(GetExpiredTimer()), 222)) //移除死亡单位
     call TriggerRegisterUnitEvent(t, u1, EVENT_UNIT_DEATH) //添加事件到触发器
     call FlushChildHashtable(udg_hs, GetHandleId(GetExpiredTimer())) //清除哈希表
     call DestroyTimer(GetExpiredTimer()) //清除计时器
@@ -2594,8 +3484,8 @@ function xg takes nothing returns nothing
     local timer t=CreateTimer()
     local trigger tr=CreateTrigger()
     call DestroyTrigger(GetTriggeringTrigger()) //删除触发触发
-    call SaveInteger(udg_hs, GetHandleId(t), StringHash("复活boss"), GetUnitTypeId(GetTriggerUnit())) //保存死亡的类型
-    call SaveUnitHandle(udg_hs, GetHandleId(t), StringHash("单位"), GetTriggerUnit()) //保存死亡的单位
+    call SaveInteger(udg_hs, GetHandleId(t), 333, GetUnitTypeId(GetTriggerUnit())) //保存死亡的类型
+    call SaveUnitHandle(udg_hs, GetHandleId(t), 222, GetTriggerUnit()) //保存死亡的单位
     call TimerStart(t, 10, false, function xgfh) //启动计时器
     call TriggerAddAction(tr, function xg) //新触发添加动作
     call SaveTriggerHandle(udg_hs, GetHandleId(t), 0, tr) //保存触发器
@@ -2661,6 +3551,9 @@ endfunction
     set tempint='uAA3'
     set tempint='uAA4'
     set tempint='uAA5'
+    set tempint='AE00'
+    set tempint='AE01'
+    set tempint='AE02'
     //初始化函数
     set udg_hs=InitHashtable()
     
@@ -3449,9 +4342,11 @@ endfunction
     call SaveInteger(udg_hs, 13, 6, 'UBB5')
     
     call SaveInteger(udg_hs, 9, 'HA00', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA00', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA00', - 1280, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 1, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA00', 3, "Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3460,9 +4355,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA01', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA01', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA01', - 768, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 2, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA01', 3, "Abilities\\Spells\\Orc\\Purge\\PurgeBuffTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3471,9 +4368,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA02', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA02', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA02', - 256, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 3, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA02', 3, "Units\\Demon\\Infernal\\InfernalBirth.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3482,9 +4381,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA03', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA03', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA03', 256, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 4, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA03', 3, "Abilities\\Spells\\NightElf\\FanOfKnives\\FanOfKnivesCaster.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3493,9 +4394,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA04', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA04', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA04', 768, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 5, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA04', 3, "Abilities\\Spells\\Undead\\ReplenishHealth\\ReplenishHealthCasterOverhead.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3504,9 +4407,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA05', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA05', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA05', 1280, 0, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 6, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA05', 3, "Abilities\\Spells\\Undead\\DarkRitual\\DarkRitualTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3515,9 +4420,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA06', 1) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA06', 0.9) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA06', - 1280, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 7, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA06', 3, "Abilities\\Spells\\NightElf\\SpiritOfVengeance\\SpiritOfVengeanceBirthMissile.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3526,9 +4433,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA07', 2) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA07', 0.95) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA07', - 768, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 8, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA07', 3, "Abilities\\Spells\\Human\\Slow\\SlowCaster.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3537,9 +4446,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA08', 3) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA08', 1) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA08', - 256, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 9, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA08', 3, "Abilities\\Spells\\Undead\\AnimateDead\\AnimateDeadTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3548,9 +4459,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA09', 4) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA09', 1.05) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA09', 256, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 10, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA09', 3, "Abilities\\Spells\\Human\\FlakCannons\\FlakTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3559,9 +4472,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0A', 5) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0A', 1.1) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0A', 768, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 11, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0A', 3, "Abilities\\Spells\\Items\\AIil\\AIilTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3570,9 +4485,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0B', 11) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0B', 1.15) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0B', 1280, - 512, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 12, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0B', 3, "Abilities\\Spells\\Undead\\CarrionSwarm\\CarrionSwarmDamage.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3581,9 +4498,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0C', 12) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0C', 1.2) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0C', - 1280, - 1024, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 13, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0C', 3, "Abilities\\Spells\\Demon\\DarkPortal\\DarkPortalTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3592,9 +4511,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0D', 13) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0D', 1.25) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0D', - 768, - 1024, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 14, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0D', 3, "Abilities\\Spells\\Human\\MarkOfChaos\\MarkOfChaosTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3603,9 +4524,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0E', 21) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0E', 1.3) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0E', - 256, - 1024, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 15, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0E', 3, "Abilities\\Weapons\\PhoenixMissile\\Phoenix_Missile_mini.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3614,9 +4537,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0F', 22) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0F', 1.35) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0F', 256, - 1024, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 16, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0F', 3, "Abilities\\Weapons\\FrostWyrmMissile\\FrostWyrmMissile.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3625,9 +4550,11 @@ endfunction
     endloop
     
     call SaveInteger(udg_hs, 9, 'HA0G', 23) //最后用权限来代替
+    call SaveReal(udg_hs, 30, 'HA0G', 1.4) //保存英雄系数
     set unitt=CreateUnit(Player(15), 'HA0G', 768, - 1024, 270) //创建可选择英雄
     call SetUnitInvulnerable(unitt, true) //设置无敌
     call SaveUnitHandle(udg_hs, 8, 17, unitt) //保存到哈希表
+    call SaveStr(udg_hs, 'HA0G', 3, "Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl") //保存特效
     set loopli=0
     loop
         exitwhen loopli == 6
@@ -3636,34 +4563,33 @@ endfunction
     endloop
     
     set unitt=null
-    call SaveTimerHandle(udg_hs, 0, StringHash("出怪计时器"), CreateTimer()) //保存出怪计时器
-    call SavePlayerHandle(udg_hs, 0, StringHash("出怪玩家"), Player(11)) //保存出怪玩家，不过好像没啥用了
+    call SaveTimerHandle(udg_hs, 0, 1015, CreateTimer()) //保存出怪计时器
     
     set unitt=CreateUnit(Player(6), 'hC00', 0, - 3840, 90) //创建基地
     call SaveUnitHandle(udg_hs, 0, StringHash("基地"), unitt)
     
-    set unitt=CreateUnit(Player(6), 'hC01', 253, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC01', 253, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC02', - 256, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC02', - 256, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC03', 768, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC03', 768, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC04', - 768, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC04', - 768, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC05', 1280, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC05', 1280, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC06', - 1280, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC06', - 1280, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC07', 1792, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC07', 1792, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
-    set unitt=CreateUnit(Player(6), 'hC08', - 1792, - 4608, 90) //创建npc
+    set unitt=CreateUnit(Player(6), 'hC08', - 1792, - 4864, 90) //创建npc
     call SetUnitInvulnerable(unitt, true) //设置无敌
     
     set unitt=null
@@ -5084,11 +6010,54 @@ endfunction
     call SaveInteger(udg_hs, 'IB13', 4, 'IB17')
     call SaveInteger(udg_hs, 'IB13', 5, 'IB18')
     
-    set vx[0]=1
+    set kx[11]='AA3A'
+    
+    set kx[11]='AA3B'
+    
+    set kx[11]='AA3C'
+    
+    set kx[11]='AA3D'
+    
+    set kx[11]='AA3E'
+    
+    set kx[11]='AA3F'
+    
+    set kx[11]='AA3G'
+    
+    set kx[11]='AA3H'
+    
+    set kx[11]='AA3I'
+    
+    set kx[11]='AA3J'
+    
+    set kx[11]='AA3K'
+    
+    set kx[11]='AA4A'
+    
+    set kx[11]='AA4B'
+    
+    set kx[11]='AA4C'
+    
+    set kx[11]='AA4D'
+    
+    set kx[11]='AA4E'
+    
+    set kx[11]='AA4F'
+    
+    set kx[11]='AA4G'
+    
+    set kx[11]='AA4H'
+    
+    set kx[11]='AA4I'
+    
+    set kx[11]='AA4J'
+    
+    set vx[0]=0
     set zx[0]=0
-    set cx[0]=1
-    set yx[0]=1
-    set fx[0]=1
+    set cx[0]=0
+    set yx[0]=0
+    set fx[0]=0
+    set dx[0]=0
     set m[0]=GetRandomInt(- 50, 50)
     set m[6]=m[0]
     set m[7]=- 50
@@ -5098,11 +6067,12 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[0] + StringHash(GetPlayerName(Player(0))), m[0], 4052366646 + m[0])
     
-    set vx[1]=1
+    set vx[1]=0
     set zx[1]=0
-    set cx[1]=1
-    set yx[1]=1
-    set fx[1]=1
+    set cx[1]=0
+    set yx[1]=0
+    set fx[1]=0
+    set dx[1]=0
     set m[1]=GetRandomInt(- 50, 50)
     set m[6]=m[1]
     set m[7]=- 50
@@ -5112,11 +6082,12 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[1] + StringHash(GetPlayerName(Player(1))), m[1], 4052366646 + m[1])
     
-    set vx[2]=1
+    set vx[2]=0
     set zx[2]=0
-    set cx[2]=1
-    set yx[2]=1
-    set fx[2]=1
+    set cx[2]=0
+    set yx[2]=0
+    set fx[2]=0
+    set dx[2]=0
     set m[2]=GetRandomInt(- 50, 50)
     set m[6]=m[2]
     set m[7]=- 50
@@ -5126,11 +6097,12 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[2] + StringHash(GetPlayerName(Player(2))), m[2], 4052366646 + m[2])
     
-    set vx[3]=1
+    set vx[3]=0
     set zx[3]=0
-    set cx[3]=1
-    set yx[3]=1
-    set fx[3]=1
+    set cx[3]=0
+    set yx[3]=0
+    set fx[3]=0
+    set dx[3]=0
     set m[3]=GetRandomInt(- 50, 50)
     set m[6]=m[3]
     set m[7]=- 50
@@ -5140,11 +6112,12 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[3] + StringHash(GetPlayerName(Player(3))), m[3], 4052366646 + m[3])
     
-    set vx[4]=1
+    set vx[4]=0
     set zx[4]=0
-    set cx[4]=1
-    set yx[4]=1
-    set fx[4]=1
+    set cx[4]=0
+    set yx[4]=0
+    set fx[4]=0
+    set dx[4]=0
     set m[4]=GetRandomInt(- 50, 50)
     set m[6]=m[4]
     set m[7]=- 50
@@ -5154,11 +6127,12 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[4] + StringHash(GetPlayerName(Player(4))), m[4], 4052366646 + m[4])
     
-    set vx[5]=1
+    set vx[5]=0
     set zx[5]=0
-    set cx[5]=1
-    set yx[5]=1
-    set fx[5]=1
+    set cx[5]=0
+    set yx[5]=0
+    set fx[5]=0
+    set dx[5]=0
     set m[5]=GetRandomInt(- 50, 50)
     set m[6]=m[5]
     set m[7]=- 50
@@ -5168,28 +6142,117 @@ endfunction
     endloop
     call SaveInteger(udg_hs, m[5] + StringHash(GetPlayerName(Player(5))), m[5], 4052366646 + m[5])
     
+    
     set lgf[0]=0
     set lgf[6]=0
     set lgf[12]=0
+    
     set lgf[1]=0
     set lgf[7]=0
     set lgf[13]=0
+    
     set lgf[2]=0
     set lgf[8]=0
     set lgf[14]=0
+    
     set lgf[3]=0
     set lgf[9]=0
     set lgf[15]=0
+    
     set lgf[4]=0
     set lgf[10]=0
     set lgf[16]=0
+    
     set lgf[5]=0
     set lgf[11]=0
     set lgf[17]=0
     
+    set cl[1]='IB2Y'
+    
+    set cl[2]='IB2Z'
+    
+    set cl[3]='IB30'
+    
+    set cl[4]='IB31'
+    
+    set cl[5]='IB39'
+    
+    set cl[6]='IB3A'
+    
+    set cl[7]='IB3C'
+    
+    set cl[8]='IB3D'
+    
+    set cl[9]='IB3E'
+    
+    set cl[10]='IB3F'
+    
+    set cl[11]='IB3G'
+    
+    set cl[12]='IB3H'
+    
+    set cl[13]='IB3I'
+    
+    set cl[14]='IB3J'
+    
+    set cl[15]='IB3K'
+    
+    set cl[16]='IB3L'
+    
+    set cl[17]='IB3M'
+    
+    set cl[18]='IB3N'
+    
+    set cl[19]='IB3O'
+    
+    set cl[20]='IB3P'
+    
+    set cl[21]='IB3Q'
+    
+    set cl[22]='IB3R'
+    
+    set cl[23]='IB3S'
+    
+    set cl[24]='IB3T'
+    
+    set cl[25]='IB3U'
+    
+    set cl[26]='IB3V'
+    
+    set cl[27]='IB3W'
+    
+    set cl[28]='IB3X'
+    
+    set cl[29]='IB3Y'
+    
+    set cl[30]='IB3Z'
+    
+    set cl[31]='IB40'
+    
+    set cl[32]='IB41'
+    
+    //call SaveInteger(udg_hs,30,1,'IBB0')
+    set cl[33]='IBB0'
+    
+    //call SaveInteger(udg_hs,30,2,'IBB1')
+    set cl[34]='IBB1'
+    
+    //call SaveInteger(udg_hs,30,3,'IBB2')
+    set cl[35]='IBB2'
+    
+    //call SaveInteger(udg_hs,30,4,'IBB3')
+    set cl[36]='IBB3'
+    
+    //call SaveInteger(udg_hs,30,5,'IBB4')
+    set cl[37]='IBB4'
+    
+    //call SaveInteger(udg_hs,30,6,'IBB5')
+    set cl[38]='IBB5'
+    
+    call zhan() //天赋技能初始化随机
     set ttt=null
     endfunction 
-    function csh___init takes nothing returns nothing
+    function csh__init takes nothing returns nothing
         call LUAcreateunit() //lua初始化，内容在上面
         call input() //输入触发
         call xzyx() //选择英雄初始化
@@ -5205,6 +6268,7 @@ endfunction
         call death() //注册死亡事件
         call skill() //注册发动技能效果事件
         call sywp() //注册任意单位使用物品
+        call lvup() //注册英雄升级事件
     endfunction
 
 //library csh ends
@@ -5214,7 +6278,7 @@ endfunction
 // 
 //   Warcraft III map script
 //   Generated by the Warcraft III World Editor
-//   Date: Sun Jun 17 10:39:35 2018
+//   Date: Fri Jun 22 20:52:50 2018
 //   Map Author: 张耀畅
 // 
 //===========================================================================
@@ -5312,7 +6376,7 @@ function main takes nothing returns nothing
     call SetMapMusic("Music", true, 0)
     call InitBlizzard()
 
-call ExecuteFunc("csh___init")
+call ExecuteFunc("csh__init")
 
     call InitGlobals()
 endfunction
